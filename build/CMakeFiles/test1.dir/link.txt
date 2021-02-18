@@ -1,0 +1,1 @@
+/home/dadosaru/sycl_workspace/llvm/build/bin/clang++ CMakeFiles/test1.dir/test1.cpp.o -o test1  -fsycl -fsycl-targets=nvptx64-nvidia-cuda-sycldevice -fsycl-unnamed-lambda -std=c++17 -stdlib=libstdc++ -DNDEBUG -DROOT_NO_INT128 

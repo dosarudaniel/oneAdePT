@@ -2,27 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <CL/sycl.hpp>
-//#include <dpct/dpct.hpp>
-
+#include <dpct/dpct.hpp>
 #include <CopCore/Ranluxpp.h>
 
 #include <iostream>
-
-//#include <assert.h>
-#include <stdlib.h>
-
-class CUDADeviceSelector : public sycl::device_selector {
-public:
-  int operator()(const sycl::device &device) const override {
-    return 1;
-    /*
-    if (device.get_platform().get_backend() == sycl::backend::cuda)
-      return 1;
-    else
-      return -1;
-    */
-  }
-};
 
 void kernel(RanluxppDouble *r, double *d, uint64_t *i, double *d2)
 {
@@ -34,41 +17,33 @@ void kernel(RanluxppDouble *r, double *d, uint64_t *i, double *d2)
 
 int main(void)
 {
-  //dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  const sycl::device  &dev_ct1 = sycl::device();
-    
-  sycl::queue q_ct1{CUDADeviceSelector()};
-  
+  dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  sycl::queue &q_ct1        = dev_ct1.default_queue();
   RanluxppDouble r;
   std::cout << "double: " << r.Rndm() << std::endl;
   std::cout << "int: " << r.IntRndm() << std::endl;
 
   RanluxppDouble *r_dev;
-
   r_dev = sycl::malloc_device<RanluxppDouble>(1, q_ct1);
-
   double *d_dev_ptr;
   uint64_t *i_dev_ptr;
   double *d2_dev_ptr;
-
   d_dev_ptr  = sycl::malloc_device<double>(1, q_ct1);
   i_dev_ptr  = sycl::malloc_device<uint64_t>(1, q_ct1);
   d2_dev_ptr = sycl::malloc_device<double>(1, q_ct1);
 
   // Transfer the state of the generator to the device.
   q_ct1.memcpy(r_dev, &r, sizeof(RanluxppDouble)).wait();
-  //dev_ct1.queues_wait_and_throw();
-  q_ct1.wait_and_throw();
-  
+  dev_ct1.queues_wait_and_throw();
+
   q_ct1.submit([&](sycl::handler &cgh) {
     cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
                      [=](sycl::nd_item<3> item_ct1) {
                        kernel(r_dev, d_dev_ptr, i_dev_ptr, d2_dev_ptr);
                      });
   });
-  //dev_ct1.queues_wait_and_throw(); 
-  q_ct1.wait_and_throw();
- 
+  dev_ct1.queues_wait_and_throw();
+
   // Generate from the same state on the host.
   double d   = r.Rndm();
   uint64_t i = r.IntRndm();
@@ -79,13 +54,10 @@ int main(void)
   double d_dev;
   uint64_t i_dev;
   double d2_dev;
-
   q_ct1.memcpy(&d_dev, d_dev_ptr, sizeof(double)).wait();
   q_ct1.memcpy(&i_dev, i_dev_ptr, sizeof(uint64_t)).wait();
   q_ct1.memcpy(&d2_dev, d2_dev_ptr, sizeof(double)).wait();
-
-  //dev_ct1.queues_wait_and_throw();
-  q_ct1.wait_and_throw();
+  dev_ct1.queues_wait_and_throw();
 
   int ret = 0;
 
@@ -93,7 +65,6 @@ int main(void)
   std::cout << "double:" << std::endl;
   std::cout << "   host:   " << d << std::endl;
   std::cout << "   device: " << d_dev << std::endl;
-
   ret += (d != d_dev);
 
   std::cout << "int:" << std::endl;

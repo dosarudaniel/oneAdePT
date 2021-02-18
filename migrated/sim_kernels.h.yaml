@@ -1,0 +1,46 @@
+---
+MainSourceFile:  '/home/pbuncic/Software/src/AdePT/test/migrated/sim_kernels.h'
+Replacements:
+  - FilePath:        '/home/pbuncic/Software/src/AdePT/test/sim_kernels.h'
+    Offset:          91
+    Length:          0
+    ReplacementText: '#include <CL/sycl.hpp>
+#include <dpct/dpct.hpp>
+'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+  - FilePath:        '/home/pbuncic/Software/src/AdePT/test/sim_kernels.h'
+    Offset:          839
+    Length:          9
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+  - FilePath:        '/home/pbuncic/Software/src/AdePT/test/sim_kernels.h'
+    Offset:          848
+    Length:          10
+    ReplacementText: ''
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+  - FilePath:        '/home/pbuncic/Software/src/AdePT/test/sim_kernels.h'
+    Offset:          1209
+    Length:          364
+    ReplacementText: 'dpct::global_memory<COPCORE_CALLABLE_FUNC, 0> _ptr_generateAndStorePrimary(generateAndStorePrimary);'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+  - FilePath:        '/home/pbuncic/Software/src/AdePT/test/sim_kernels.h'
+    Offset:          1771
+    Length:          386
+    ReplacementText: 'dpct::global_memory<COPCORE_CALLABLE_FUNC, 0> _ptr_selectTrack(selectTrack);'
+    ConstantFlag:    ''
+    ConstantOffset:  0
+    InitStr:         ''
+    NewHostVarName:  ''
+...

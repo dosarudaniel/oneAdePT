@@ -1,0 +1,44 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../base/inc/CopCore/Global.h
+cstdio
+-
+type_traits
+-
+CopCore/Macros.h
+-
+
+../base/inc/CopCore/Macros.h
+
+../base/inc/CopCore/Ranluxpp.h
+CopCore/Global.h
+-
+mulmod.h
+../base/inc/CopCore/mulmod.h
+cassert
+-
+cstdint
+-
+
+../base/inc/CopCore/mulmod.h
+cstdint
+-
+CopCore/Global.h
+../base/inc/CopCore/CopCore/Global.h
+
+/home/dadosaru/OneAPI-Playground/test2.cpp
+CL/sycl.hpp
+-
+CopCore/Ranluxpp.h
+-
+iostream
+-
+stdlib.h
+-
+
