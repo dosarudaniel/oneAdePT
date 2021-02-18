@@ -21,9 +21,8 @@ Configure cmake:
 To compile:   
 `make`   
    
-To run it:   
+To run test1:   
 `SYCL_DEVICE_FILTER=PI_LEVEL_ZERO ./test1`  
 or    
 `SYCL_DEVICE_FILTER=PI_CUDA ./test1`  
-`SYCL_DEVICE_FILTER=PI_LEVEL_ZERO ./test2`   
 
