@@ -13,7 +13,9 @@ Set up the environment variables:
    
 Configure cmake:   
 `mkdir build && cd build`   
-`export SYCL_ROOT_DIR=~/sycl_workspace/llvm/build`   
+`export SYCL_ROOT_DIR=~/sycl_workspace/llvm/build`      
+`export CC=clang++`      
+`export CXX=$SYCL_ROOT/bin/clang++`       
 `cmake ../ -DSYCL_ROOT=${SYCL_ROOT_DIR} -DCMAKE_CXX_COMPILER=${SYCL_ROOT_DIR}/bin/clang++`   
    
 To compile:   
