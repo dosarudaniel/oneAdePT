@@ -120,7 +120,7 @@ void process_eloss(int n, adept::BlockData<MyTrack> *block, Scoring *scor,
     // call the 'process'
     // energy loss
     float eloss = 0.2f * (*block)[particle_index].energy;
-    //scor->totalEnergyLoss.fetch_add(eloss < 0.001f ? (*block)[particle_index].energy : eloss);
+    scor->totalEnergyLoss.fetch_add(eloss < 0.001f ? (*block)[particle_index].energy : eloss);
     (*block)[particle_index].energy = (eloss < 0.001f ? 0.0f : ((*block)[particle_index].energy - eloss));
 
     // if particle dies (E=0) release the slot
@@ -153,7 +153,7 @@ void process_pairprod(int n, adept::BlockData<MyTrack> *block, Scoring *scor,
     secondary_track->energy = eloss;
 
     // increase the counter of secondaries
-    //scor->secondaries.fetch_add(1);
+    scor->secondaries.fetch_add(1);
   }
 }
 
@@ -257,10 +257,7 @@ int main()
 
     numBlocks_transport[2] = std::min(numBlocks[2], maxBlocks[2]);
 
-    /*
-    DPCT1049:7: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query
-    info::device::max_work_group_size. Adjust the workgroup size if needed.
-    */
+
     q_ct1.submit([&](sycl::handler &cgh) {
       auto queues_size_ct0 = queues[2]->size();
       auto queues_ct3      = queues[2];
@@ -270,17 +267,13 @@ int main()
       });
     });
 
-    // call the kernel to select the process
-    /*
-    DPCT1049:8: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query
-    info::device::max_work_group_size. Adjust the workgroup size if needed.
-    */
+    
     q_ct1.submit([&](sycl::handler &cgh) {
       cgh.parallel_for(sycl::nd_range<3>(numBlocks * nthreads, nthreads), [=](sycl::nd_item<3> item_ct1) {
-        select_process(block, scor, state, queues, item_ct1);
+        // select_process(block, scor, state, queues, item_ct1);
       });
     });
-
+    
     q_ct1.wait_and_throw();
 
     // call the process kernels
@@ -288,29 +281,21 @@ int main()
     numBlocks_eloss[2]    = std::min((queues[0]->size() + nthreads[2] - 1) / nthreads[2], maxBlocks[2]);
     numBlocks_pairprod[2] = std::min((queues[1]->size() + nthreads[2] - 1) / nthreads[2], maxBlocks[2]);
 
-    /*
-    DPCT1049:9: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query
-    info::device::max_work_group_size. Adjust the workgroup size if needed.
-    */
     q_ct1.submit([&](sycl::handler &cgh) {
       auto queues_size_ct0 = queues[0]->size();
       auto queues_ct4      = queues[0];
 
       cgh.parallel_for(sycl::nd_range<3>(numBlocks_eloss * nthreads, nthreads), [=](sycl::nd_item<3> item_ct1) {
-        process_eloss(queues_size_ct0, block, scor, state, queues_ct4, item_ct1);
+        // process_eloss(queues_size_ct0, block, scor, state, queues_ct4, item_ct1);
       });
     });
 
-    /*
-    DPCT1049:10: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query
-    info::device::max_work_group_size. Adjust the workgroup size if needed.
-    */
     q_ct1.submit([&](sycl::handler &cgh) {
       auto queues_size_ct0 = queues[1]->size();
       auto queues_ct4      = queues[1];
 
       cgh.parallel_for(sycl::nd_range<3>(numBlocks_pairprod * nthreads, nthreads), [=](sycl::nd_item<3> item_ct1) {
-        process_pairprod(queues_size_ct0, block, scor, state, queues_ct4, item_ct1);
+        // process_pairprod(queues_size_ct0, block, scor, state, queues_ct4, item_ct1);
       });
     });
 
@@ -320,4 +305,5 @@ int main()
     std::cout << "Total energy loss " << scor->totalEnergyLoss.load() << " number of secondaries "
               << scor->secondaries.load() << " blocks used " << block->GetNused() << std::endl;
   }
+
 }
