@@ -50,4 +50,5 @@ target_include_directories(test3 PUBLIC
   )
 target_compile_features(test3 PUBLIC cxx_std_17)
 target_compile_options(test3 PUBLIC ${SYCL_FLAGS} ${EXTRA_FLAGS})
-
+target_include_directories(test3 PUBLIC ${SYCL_INCLUDE_DIR})
+target_link_libraries(test3 PUBLIC ${SYCL_FLAGS} ${EXTRA_FLAGS})
