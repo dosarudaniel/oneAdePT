@@ -9,6 +9,35 @@ if (NOT SYCL_ROOT)
   message(FATAL_ERROR "SYCL_ROOT not specified! Please specify -DSYCL_ROOT=<DPCPP_ROOT_PATH>")
 endif()
 
+macro(build_tests TESTS)
+  foreach(TEST ${TESTS})
+    get_filename_component(TARGET_NAME ${TEST} NAME_WE)
+    add_executable(${TARGET_NAME} ${TEST})
+    target_include_directories(${TARGET_NAME} PUBLIC
+      $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/base/inc>
+      $<INSTALL_INTERFACE:base>
+      )
+    target_compile_features(${TARGET_NAME}  PUBLIC cxx_std_17)
+    target_compile_options(${TARGET_NAME}  PUBLIC ${SYCL_FLAGS} ${EXTRA_FLAGS})
+    target_link_libraries(${TARGET_NAME}  PUBLIC ${SYCL_FLAGS} ${EXTRA_FLAGS})
+    target_include_directories(${TARGET_NAME}  PUBLIC ${SYCL_INCLUDE_DIR})
+  endforeach()
+endmacro()
+
+macro(add_to_test TESTS)
+  foreach(TEST ${TESTS})
+    get_filename_component(TARGET_NAME ${TEST} NAME_WE)
+    add_test(NAME ${TARGET_NAME} COMMAND ${TARGET_NAME})
+  endforeach()
+endmacro()
+
+set(ONEAPI_UNIT_TESTS_BASE
+  test1.cpp                    # converted (unmodified) test_ranluxpp.cu, unit test for RANLUX++
+  test2.cpp                    # converted (and modified) test_ranluxpp.cu, unit test for RANLUX++
+  test3.cpp                    # conveted (and modified) cufisher_price_v2.cu example
+  test4.cpp                    # simplified cufisher_price_v2.cu example
+)
+
 set(SYCL_INCLUDE_DIR "${SYCL_ROOT}/include/")
 set(SYCL_LIB "${SYCL_ROOT}/lib/libsycl.so")
 set(CMAKE_C_COMPILER "${SYCL_ROOT}/bin/clang++")
@@ -22,33 +51,9 @@ set(SYCL_FLAGS
 
 set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128")
 
-    
-add_executable(test1 test1.cpp)
-target_include_directories(test1 PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/base/inc>
-  $<INSTALL_INTERFACE:base>
-  )
-target_compile_features(test1 PUBLIC cxx_std_17)
-target_compile_options(test1 PUBLIC ${SYCL_FLAGS} ${EXTRA_FLAGS})
-target_link_libraries(test1 PUBLIC ${SYCL_FLAGS} ${EXTRA_FLAGS})
-target_include_directories(test1 PUBLIC ${SYCL_INCLUDE_DIR})
+build_tests("${ONEAPI_UNIT_TESTS_BASE}")
+add_to_test("${ONEAPI_UNIT_TESTS_BASE}")
 
-add_executable(test2 test2.cpp)
-target_include_directories(test2 PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/base/inc>
-  $<INSTALL_INTERFACE:base>
-  )
-target_compile_features(test2 PUBLIC cxx_std_17)
-target_compile_options(test2 PUBLIC ${SYCL_FLAGS} ${EXTRA_FLAGS})
-target_link_libraries(test2 PUBLIC ${SYCL_FLAGS} ${EXTRA_FLAGS})
-target_include_directories(test2 PUBLIC ${SYCL_INCLUDE_DIR})
-
-add_executable(test3 test3.cpp)
-target_include_directories(test3 PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/base/inc>
-  $<INSTALL_INTERFACE:base>
-  )
-target_compile_features(test3 PUBLIC cxx_std_17)
-target_compile_options(test3 PUBLIC ${SYCL_FLAGS} ${EXTRA_FLAGS})
-target_include_directories(test3 PUBLIC ${SYCL_INCLUDE_DIR})
-target_link_libraries(test3 PUBLIC ${SYCL_FLAGS} ${EXTRA_FLAGS})
+# Specific options for test_sparsevector
+#set_target_properties(test_sparsevector PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+#target_compile_options(test_sparsevector PRIVATE -rdc=true;-lcudadevrt)
