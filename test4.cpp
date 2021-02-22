@@ -8,6 +8,8 @@
 
 #include <AdePT/BlockData.h>
 
+using Queue_t = adept::mpmc_bounded_queue<int>;
+
 class deviceSelector : public sycl::device_selector {
 public:
   int operator()(const sycl::device &device) const override {
@@ -15,26 +17,19 @@ public:
   }
 };
 
-using Queue_t = adept::mpmc_bounded_queue<int>;
-
 void select_process(Queue_t *queues[], sycl::nd_item<3> item_ct1)
 {
-  //queues[0]->enqueue(0);
+  queues[0]->enqueue(0);
 }
-
 
 int main()
 {
-  const sycl::device  &dev_ct1 = sycl::device();
-
   sycl::queue q_ct1{deviceSelector()};
-  
-  using Queue_t = adept::mpmc_bounded_queue<int>;
 
   Queue_t **queues = nullptr;
-  queues           = sycl::malloc_shared<Queue_t *>(3, q_ct1);
+  queues           = sycl::malloc_shared<Queue_t *>(1, q_ct1);
 
-  sycl::range<3> nthreads(1, 1, 32);
+  sycl::range<3> nthreads(1, 1, 1);
 
   q_ct1.submit([&](sycl::handler &cgh) {
       cgh.parallel_for(sycl::nd_range<3>(nthreads, nthreads), [=](sycl::nd_item<3> item_ct1) {
