@@ -34,8 +34,9 @@ endmacro()
 set(ONEAPI_UNIT_TESTS_BASE
   test1.cpp                    # converted (unmodified) test_ranluxpp.cu, unit test for RANLUX++
   test2.cpp                    # converted (and modified) test_ranluxpp.cu, unit test for RANLUX++
-  test3.cpp                    # conveted (and modified) cufisher_price_v2.cu example
+  test3.cpp                    # converted (and modified) cufisher_price_v2.cu example
   test4.cpp                    # simplified cufisher_price_v2.cu example
+  test5.cpp                    # empty program, testing clang++ and the CMakeLists.txt
 )
 
 set(SYCL_INCLUDE_DIR "${SYCL_ROOT}/include/")

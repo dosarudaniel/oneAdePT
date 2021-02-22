@@ -41,5 +41,5 @@ int main()
           select_process(queues, item_ct1);
       });
   });
-    
+  return 0;
 }
