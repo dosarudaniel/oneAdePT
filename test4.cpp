@@ -2,13 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <CL/sycl.hpp>
-#include <oneapi/mkl.hpp>
-#include <oneapi/mkl/rng/device.hpp>
-#include <iostream>
-
 #include <AdePT/BlockData.h>
-
-using Queue_t = adept::mpmc_bounded_queue<int>;
 
 class deviceSelector : public sycl::device_selector {
 public:
@@ -17,23 +11,18 @@ public:
   }
 };
 
-void select_process(Queue_t *queues[], sycl::nd_item<3> item_ct1)
-{
-  queues[0]->enqueue(0);
-}
-
 int main()
 {
   sycl::queue q_ct1{deviceSelector()};
 
-  Queue_t **queues = nullptr;
-  queues           = sycl::malloc_shared<Queue_t *>(1, q_ct1);
+  adept::mpmc_bounded_queue<int> **queues = 
+      sycl::malloc_shared<adept::mpmc_bounded_queue<int> *>(1, q_ct1);
 
   sycl::range<3> nthreads(1, 1, 1);
 
   q_ct1.submit([&](sycl::handler &cgh) {
       cgh.parallel_for(sycl::nd_range<3>(nthreads, nthreads), [=](sycl::nd_item<3> item_ct1) {
-          select_process(queues, item_ct1);
+          queues[0]->enqueue(0);
       });
   });
   return 0;
