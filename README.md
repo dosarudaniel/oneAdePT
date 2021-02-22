@@ -14,10 +14,10 @@ Step 2 Configure cmake:
 `cmake ../ -DSYCL_ROOT=${SYCL_ROOT_DIR} -DCMAKE_CXX_COMPILER=${SYCL_ROOT_DIR}/bin/clang++`   
    
 Step 3 To compile:   
-`make`   
+`make test4`   
    
-Step 4 To run test1:   
-`SYCL_DEVICE_FILTER=PI_LEVEL_ZERO ./test1`  
+Step 4 To run test4:   
+`SYCL_DEVICE_FILTER=PI_LEVEL_ZERO ./test4`  
 or    
-`SYCL_DEVICE_FILTER=PI_CUDA ./test1`  
+`SYCL_DEVICE_FILTER=PI_CUDA ./test4`  
 
