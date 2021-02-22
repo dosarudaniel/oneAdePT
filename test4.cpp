@@ -4,16 +4,9 @@
 #include <CL/sycl.hpp>
 #include <AdePT/BlockData.h>
 
-class deviceSelector : public sycl::device_selector {
-public:
-  int operator()(const sycl::device &device) const override {
-    return 1;
-  }
-};
-
 int main()
 {
-  sycl::queue q_ct1{deviceSelector()};
+  sycl::queue q_ct1;
 
   adept::mpmc_bounded_queue<int> **queues = 
       sycl::malloc_shared<adept::mpmc_bounded_queue<int> *>(1, q_ct1);
