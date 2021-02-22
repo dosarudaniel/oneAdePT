@@ -6,13 +6,8 @@ Step 0 Get the llvm sycl branch:
 `python $DPCPP_HOME/llvm/buildbot/configure.py --cuda`   
 `python $DPCPP_HOME/llvm/buildbot/compile.py`   
    
-Step 1 Set up the environment variables:   
-`export DPCPP_HOME=~/sycl_workspace`   
-`export PATH=$DPCPP_HOME/llvm/build/bin:$PATH`   
-`export LD_LIBRARY_PATH=$DPCPP_HOME/llvm/build/lib:$LD_LIBRARY_PATH`  
-`export SYCL_ROOT_DIR=~/sycl_workspace/llvm/build`      
-`export CC=clang++`      
-`export CXX=$SYCL_ROOT/bin/clang++` 
+Step 1 Set up the environment variables:     
+`. configure.sh`    
    
 Step 2 Configure cmake:   
 `mkdir build && cd build`         
