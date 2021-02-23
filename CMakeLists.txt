@@ -37,7 +37,7 @@ set(ONEAPI_UNIT_TESTS_BASE
   test3.cpp                    # converted (and modified) cufisher_price_v2.cu example
   test4.cpp                    # simplified cufisher_price_v2.cu example
   test5.cpp                    # empty program, testing clang++ and the CMakeLists.txt
-#  test6.cpp                    # converted (and modified) test_atomic.cu 
+  test6.cpp                    # converted (and modified) test_atomic.cu 
   test7.cpp                    # converted (and modified) test_atomic.cu 
 )
 
@@ -53,7 +53,8 @@ set(SYCL_FLAGS
   	"-stdlib=libstdc++")
 
 #set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128" "-DCOPCORE_CUDA_COMPILER" 
-set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128" "-DCOPCORE_DEVICE_COMPILATION" )
+set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128")
+#"-DCOPCORE_DEVICE_COMPILATION" )
 
 build_tests("${ONEAPI_UNIT_TESTS_BASE}")
 add_to_test("${ONEAPI_UNIT_TESTS_BASE}")

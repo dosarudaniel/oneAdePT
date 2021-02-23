@@ -9,24 +9,16 @@
 
 #include <CL/sycl.hpp>
 #include <iostream>
-
 #include <AdePT/Atomic.h>
- 
-class CUDADeviceSelector : public sycl::device_selector {
-public:
-  int operator()(const sycl::device &device) const override {
-    return 1;
-  };
-};
-  
+
 // Example data structure containing several atomics
 struct SomeStruct {
-  adept::Atomic_t<int> var_int;
+  //adept::Atomic_t<int> var_int;
+  std::atomic<int> var_int;
   //adept::Atomic_t<float> var_float;
-  //sycl::atomic<int, global_space> var_int;
-  //sycl::atomic<float, global_space> var_float;
 
-   SomeStruct() {}
+   SomeStruct() {
+   }
 
   static SomeStruct *MakeInstanceAt(void *addr)
   {
@@ -40,16 +32,21 @@ void testAdd(SomeStruct *s)
 {
   // Test fetch_add, fetch_sub
   s->var_int.fetch_add(1);
-  //s->var_float.fetch_add(1);
+  //  s->var_float.fetch_add(1);
 }
 
 //______________________________________________________________________________________
 int main(void)
 {
-  const sycl::device  &dev_ct1 = sycl::device();
+  //  const sycl::device  &dev_ct1 = sycl::device();
 
-  sycl::queue q_ct1{CUDADeviceSelector()};
+  sycl::default_selector device_selector;
 
+  sycl::queue q_ct1(device_selector);
+  std::cout <<  "Running on "
+	    << q_ct1.get_device().get_info<cl::sycl::info::device::name>()
+	    << "\n";
+  
   // Allocate the content of SomeStruct in a buffer
   char *buffer = nullptr;
   buffer        = (char *)sycl::malloc_shared(sizeof(SomeStruct), q_ct1);
