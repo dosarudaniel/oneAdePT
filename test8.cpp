@@ -14,14 +14,11 @@
 // Example data structure containing several atomics
 struct SomeStruct {
 
-  adept::AtomicBase_t<int> var_int;
-  adept::AtomicBase_t<float> var_float;
-
-  // int a = 0;
-  // float b = 0.0;
+  adept::Atomic_t<int> var_int;
+  adept::Atomic_t<float> var_float;
 
   SomeStruct() : var_int(0), var_float(0.0) {}
-  
+
   static SomeStruct *MakeInstanceAt(void *addr)
   {
     SomeStruct *obj = new (addr) SomeStruct();
@@ -34,7 +31,7 @@ void testAdd(SomeStruct *s)
 {
   // Test fetch_add, fetch_sub
   s->var_int.fetch_add(1);
-  s->var_float.fetch_add(1);
+  //s->var_float.fetch_add(1);
 }
 
 //______________________________________________________________________________________

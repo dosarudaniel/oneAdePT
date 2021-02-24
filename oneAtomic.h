@@ -20,10 +20,10 @@ namespace adept {
   template <typename Type>
   struct AtomicBase_t {
 
-  	using AtomicType_t = sycl::ONEAPI::atomic_ref<Type,
-		       		sycl::ONEAPI::memory_order::seq_cst,
-		       		sycl::ONEAPI::memory_scope::work_item,
-		       		sycl::access::address_space::global_space>;						
+  using AtomicType_t = sycl::ONEAPI::atomic_ref<Type,
+       		       sycl::ONEAPI::memory_order::seq_cst,
+		       sycl::ONEAPI::memory_scope::work_item,
+		       sycl::access::address_space::global_space>;						
 
   AtomicType_t fData{0}; ///< Atomic data
 
@@ -60,9 +60,6 @@ namespace adept {
   {
     return fData.compare_exchange_strong(expected, desired);
   }
-
-  Type fetch_add(Type arg) { return fData.fetch_add(arg, sycl::ONEAPI::memory_order::seq_cst); }
-
 };
 
 /** @brief Atomic_t generic implementation specialized using SFINAE mechanism */
@@ -72,7 +69,10 @@ struct Atomic_t;
 /** @brief Specialization for integral types. */
 template <typename Type>
 struct Atomic_t<Type, typename std::enable_if<std::is_integral<Type>::value>::type> : public AtomicBase_t<Type> {
-  using AtomicBase_t<Type>::fData;
+  using AtomicBase_t<Type>::fData;  
+
+  /** @brief Constructor taking an address */
+  Atomic_t(Type t) : AtomicBase_t<Type>(t) {}
 
   /// Standard library atomic operations for integral types
 
@@ -123,8 +123,10 @@ struct Atomic_t<Type, typename std::enable_if<std::is_integral<Type>::value>::ty
 /** @brief Specialization for non-integral types. */
 template <typename Type>
 struct Atomic_t<Type, typename std::enable_if<!std::is_integral<Type>::value>::type> : public AtomicBase_t<Type> {
-  using Base_t = AtomicBase_t<Type>;
-  using Base_t::fData;
+  using AtomicBase_t<Type>::fData;
+
+  /** @brief Constructor taking an address */
+  Atomic_t(Type t) : AtomicBase_t<Type>(t) {}
 
   /** @brief Atomically assigns the desired value to the atomic variable. */
   Type operator=(Type desired) { return fData.operator=(desired); }
