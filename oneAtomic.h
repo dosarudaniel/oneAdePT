@@ -20,18 +20,18 @@ namespace adept {
   template <typename Type>
   struct AtomicBase_t {
 
-  using AtomicType_t = sycl::ONEAPI::atomic_ref<Type,
-		       sycl::ONEAPI::memory_order::seq_cst,
-		       sycl::ONEAPI::memory_scope::work_item,
-		       sycl::access::address_space::global_space>;						
+  	using AtomicType_t = sycl::ONEAPI::atomic_ref<Type,
+		       		sycl::ONEAPI::memory_order::seq_cst,
+		       		sycl::ONEAPI::memory_scope::work_item,
+		       		sycl::access::address_space::global_space>;						
 
-    AtomicType_t fData{0}; ///< Atomic data
+  AtomicType_t fData{0}; ///< Atomic data
 
   /** @brief Constructor taking an address */
-    AtomicBase_t() : fData{0} {}
+  AtomicBase_t(Type t) : fData(t) {}
 
    /** @brief Copy constructor */
-   AtomicBase_t(AtomicBase_t const &other) { store(other.load()); }
+  AtomicBase_t(AtomicBase_t const &other) { store(other.load()); }
 
   /** @brief Assignment */
   AtomicBase_t &operator=(AtomicBase_t const &other) { store(other.load()); }
@@ -60,6 +60,8 @@ namespace adept {
   {
     return fData.compare_exchange_strong(expected, desired);
   }
+
+  Type fetch_add(Type arg) { return fData.fetch_add(arg, sycl::ONEAPI::memory_order::seq_cst); }
 
 };
 

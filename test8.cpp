@@ -14,14 +14,14 @@
 // Example data structure containing several atomics
 struct SomeStruct {
 
-  adept::Atomic_t<int> var_int;
-  adept::Atomic_t<float> var_float;
+  adept::AtomicBase_t<int> var_int;
+  adept::AtomicBase_t<float> var_float;
 
-  int a = 0;
-  float b = 0.0;
+  // int a = 0;
+  // float b = 0.0;
 
-  SomeStruct() : var_int(), var_float() {}
-  //SomeStruct() {}
+  SomeStruct() : var_int(0), var_float(0.0) {}
+  
   static SomeStruct *MakeInstanceAt(void *addr)
   {
     SomeStruct *obj = new (addr) SomeStruct();
@@ -58,7 +58,7 @@ int main(void)
   
   // Define the kernels granularity: 10K blocks of 32 treads each
   sycl::range<3> nblocks(1, 1, 10000), nthreads(1, 1, 32);
- 
+
   q_ct1.submit([&](sycl::handler &cgh) {
     cgh.parallel_for(sycl::nd_range<3>(nblocks * nthreads, nthreads), [=](sycl::nd_item<3> item_ct1) {
       testAdd(a);
