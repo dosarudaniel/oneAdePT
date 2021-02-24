@@ -20,13 +20,15 @@ namespace adept {
   template <typename Type>
   struct AtomicBase_t {
 
-  using AtomicType_t = sycl::ONEAPI::atomic_ref<Type,
-       		       sycl::ONEAPI::memory_order::seq_cst,
-		       sycl::ONEAPI::memory_scope::work_item,
-		       sycl::access::address_space::global_space>;						
+  template <typename T>
 
-  AtomicType_t fData{0}; ///< Atomic data
+  using atomic_ref_T =  sycl::ONEAPI::atomic_ref<T,
+			sycl::ONEAPI::memory_order::relaxed,
+			sycl::ONEAPI::memory_scope::device,
+			sycl::access::address_space::global_space>;
 
+  atomic_ref_T<Type> fData{0}; ///< Atomic data
+    
   /** @brief Constructor taking an address */
   AtomicBase_t(Type t) : fData(t) {}
 

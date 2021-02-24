@@ -31,7 +31,7 @@ void testAdd(SomeStruct *s)
 {
   // Test fetch_add, fetch_sub
   s->var_int.fetch_add(1);
-  //s->var_float.fetch_add(1);
+  s->var_float.fetch_add(1);
 }
 
 //______________________________________________________________________________________
