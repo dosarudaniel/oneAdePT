@@ -9,16 +9,27 @@
 
 #include <CL/sycl.hpp>
 #include <iostream>
-#include <AdePT/Atomic.h>
+//#include <AdePT/Atomic.h>
 
+using atomic_int_t = sycl::ONEAPI::atomic_ref<int,
+  		     sycl::ONEAPI::memory_order::seq_cst,
+		     sycl::ONEAPI::memory_scope::work_item,
+		     sycl::access::address_space::global_space>;
+using atomic_float_t = sycl::ONEAPI::atomic_ref<float,
+  		       sycl::ONEAPI::memory_order::seq_cst,
+		       sycl::ONEAPI::memory_scope::work_item,
+		       sycl::access::address_space::global_space>;
+
+int a = 1;
 // Example data structure containing several atomics
 struct SomeStruct {
   //adept::Atomic_t<int> var_int;
-  std::atomic<int> var_int;
   //adept::Atomic_t<float> var_float;
-
-   SomeStruct() {
-   }
+  int a = 1;
+  float b = 1.0;
+  atomic_int_t var_int;
+  atomic_float_t var_float;
+  SomeStruct() : var_int(a), var_float(b) {}
 
   static SomeStruct *MakeInstanceAt(void *addr)
   {
@@ -32,7 +43,7 @@ void testAdd(SomeStruct *s)
 {
   // Test fetch_add, fetch_sub
   s->var_int.fetch_add(1);
-  //  s->var_float.fetch_add(1);
+  s->var_float.fetch_add(1);
 }
 
 //______________________________________________________________________________________

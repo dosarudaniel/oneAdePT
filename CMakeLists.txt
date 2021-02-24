@@ -9,6 +9,8 @@ if (NOT SYCL_ROOT)
   message(FATAL_ERROR "SYCL_ROOT not specified! Please specify -DSYCL_ROOT=<DPCPP_ROOT_PATH>")
 endif()
 
+set(CMAKE_VERBOSE_MAKEFILE 1)
+
 macro(build_tests TESTS)
   foreach(TEST ${TESTS})
     get_filename_component(TARGET_NAME ${TEST} NAME_WE)
@@ -17,7 +19,7 @@ macro(build_tests TESTS)
       $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/base/inc>
       $<INSTALL_INTERFACE:base>
       )
-    target_compile_features(${TARGET_NAME}  PUBLIC cxx_std_17)
+    #target_compile_features(${TARGET_NAME}  PUBLIC cxx_std_17)
     target_compile_options(${TARGET_NAME}  PUBLIC ${SYCL_FLAGS} ${EXTRA_FLAGS})
     target_link_libraries(${TARGET_NAME}  PUBLIC ${SYCL_FLAGS} ${EXTRA_FLAGS})
     target_include_directories(${TARGET_NAME}  PUBLIC ${SYCL_INCLUDE_DIR})
@@ -49,11 +51,11 @@ set(SYCL_FLAGS
   	"-fsycl"
   	"-fsycl-targets=nvptx64-nvidia-cuda-sycldevice"
   	"-fsycl-unnamed-lambda"
-  	"-std=c++17"
+  	"-std=c++20"
   	"-stdlib=libstdc++")
 
 #set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128" "-DCOPCORE_CUDA_COMPILER" 
-set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128")
+set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128" "-I../../local/include")
 #"-DCOPCORE_DEVICE_COMPILATION" )
 
 build_tests("${ONEAPI_UNIT_TESTS_BASE}")
