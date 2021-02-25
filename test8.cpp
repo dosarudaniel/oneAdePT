@@ -1,24 +1,14 @@
-// SPDX-FileCopyrightText: 2020 CERN
-// SPDX-License-Identifier: Apache-2.0
-
-/**
- * @file test_atomic.cu
- * @brief Unit test for atomic operations.
- * @author Andrei Gheata (andrei.gheata@cern.ch)
- */
-
 #include <CL/sycl.hpp>
 #include <iostream>
-#include "oneAtomic.h"
+#include <AdePT/1/Atomic.h>
 
 // Example data structure containing several atomics
 struct SomeStruct {
-
   adept::Atomic_t<int> var_int;
   adept::Atomic_t<float> var_float;
-
-  SomeStruct() : var_int(0), var_float(0.0) {}
-
+  int a = 0;
+  float b = 0;
+  SomeStruct(): var_int(a),var_float(b) {}
   static SomeStruct *MakeInstanceAt(void *addr)
   {
     SomeStruct *obj = new (addr) SomeStruct();
@@ -37,8 +27,6 @@ void testAdd(SomeStruct *s)
 //______________________________________________________________________________________
 int main(void)
 {
-  //  const sycl::device  &dev_ct1 = sycl::device();
-
   sycl::default_selector device_selector;
 
   sycl::queue q_ct1(device_selector);
