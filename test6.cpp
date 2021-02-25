@@ -10,21 +10,14 @@
 #include <CL/sycl.hpp>
 #include <iostream>
 #include <cassert>
-//#include <AdePT/Atomic.h>
+#include <AdePT/1/Atomic.h>
 
-using atomic_int_t = sycl::ONEAPI::atomic_ref<int,
-					      sycl::ONEAPI::memory_order::seq_cst,
-					      sycl::ONEAPI::memory_scope::work_item,
-					      sycl::access::address_space::global_space>;
-using atomic_float_t = sycl::ONEAPI::atomic_ref<float,
-						sycl::ONEAPI::memory_order::seq_cst,
-						sycl::ONEAPI::memory_scope::work_item,
-						sycl::access::address_space::global_space>;
 struct SomeStruct {
   int a = 0;
   float b = 0.0;
-  atomic_int_t var_int;
-  atomic_float_t var_float;
+  adept::Atomic_t<int> var_int;
+  adept::Atomic_t<float> var_float;
+
   SomeStruct() : var_int(a), var_float(b) {}
 
   static SomeStruct *MakeInstanceAt(void *addr)

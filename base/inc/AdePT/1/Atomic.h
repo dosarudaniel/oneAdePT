@@ -32,6 +32,16 @@ struct Atomic_t<Type> {
   /** @brief Atomically loads and returns the current value of the atomic variable. */
   Type load() const { return fData.load(); }
 
+  /** @brief Atomically replaces the underlying value with desired. */
+  Type exchange(Type desired) { return fData.exchange(desired); }
+
+  /** @brief Atomically compares the stored value with the expected one, and if equal stores desired.
+   * If not loads the old value into expected. Returns true if swap was successful. */
+  bool compare_exchange_strong(Type &expected, Type desired)
+  {
+    return fData.compare_exchange_strong(expected, desired);
+  }
+
   // Standard library atomic operations for integral types
 
   // @brief Atomically assigns the desired value to the atomic variable.
