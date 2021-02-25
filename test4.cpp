@@ -6,29 +6,25 @@
 #include <oneapi/mkl/rng/device.hpp>
 #include <iostream>
 
-#include <AdePT/BlockData.h>
-
-class deviceSelector : public sycl::device_selector {
-public:
-  int operator()(const sycl::device &device) const override {
-    return 1;
-  }
-};
+#include <AdePT/1/BlockData.h>
 
 using Queue_t = adept::mpmc_bounded_queue<int>;
 
 void select_process(Queue_t *queues[], sycl::nd_item<3> item_ct1)
 {
-  //queues[0]->enqueue(0);
+  //  queues[0]->enqueue(0);
 }
 
 
 int main()
 {
-  //  const sycl::device  &dev_ct1 = sycl::device();
+  sycl::default_selector device_selector;
 
-  sycl::queue q_ct1{deviceSelector()};
-  
+  sycl::queue q_ct1(device_selector);
+  std::cout <<  "Running on "
+	    << q_ct1.get_device().get_info<cl::sycl::info::device::name>()
+	    << "\n";
+
   using Queue_t = adept::mpmc_bounded_queue<int>;
 
   Queue_t **queues = nullptr;

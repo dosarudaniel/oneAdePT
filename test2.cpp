@@ -3,26 +3,10 @@
 
 #include <CL/sycl.hpp>
 //#include <dpct/dpct.hpp>
-
 #include <CopCore/Ranluxpp.h>
 
 #include <iostream>
-
-//#include <assert.h>
 #include <stdlib.h>
-
-class CUDADeviceSelector : public sycl::device_selector {
-public:
-  int operator()(const sycl::device &device) const override {
-    return 1;
-    /*
-    if (device.get_platform().get_backend() == sycl::backend::cuda)
-      return 1;
-    else
-      return -1;
-    */
-  }
-};
 
 void kernel(RanluxppDouble *r, double *d, uint64_t *i, double *d2)
 {
@@ -34,10 +18,12 @@ void kernel(RanluxppDouble *r, double *d, uint64_t *i, double *d2)
 
 int main(void)
 {
-  //dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  const sycl::device  &dev_ct1 = sycl::device();
-    
-  sycl::queue q_ct1{CUDADeviceSelector()};
+  sycl::default_selector device_selector;
+
+  sycl::queue q_ct1(device_selector);
+  std::cout <<  "Running on "
+	    << q_ct1.get_device().get_info<cl::sycl::info::device::name>()
+	    << "\n";
   
   RanluxppDouble r;
   std::cout << "double: " << r.Rndm() << std::endl;
