@@ -20,12 +20,27 @@ struct Atomic_t<Type> {
    		         sycl::ONEAPI::memory_order::relaxed,
 		         sycl::ONEAPI::memory_scope::device,
 		         sycl::access::address_space::global_space>;
-  AtomicBase_t fData;
   
-  Atomic_t(Type& a): fData(a) {}
+  Type a = 0; AtomicBase_t fData{a};
 
-  //   Atomic_t() {}
+  /** @brief Constructor taking an address */
+  Atomic_t(Type t = 0) : fData(a) { a = t;}
+  
+  /** @brief Copy constructor */
+  Atomic_t(AtomicBase_t const &other) { store(other.load()); }
 
+  /** @brief Assignment */
+  Atomic_t &operator=(AtomicBase_t const &other) { store(other.load()); }
+
+  /** @brief Emplace the data at a given address */
+  static Atomic_t *MakeInstanceAt(void *addr)
+  {
+    assert(addr != nullptr && "cannot allocate at nullptr address");
+    assert((((unsigned long long)addr) % alignof(AtomicType_t)) == 0 && "addr does not satisfy alignment");
+    AtomicBase_t *obj = new (addr) AtomicBase_t();
+    return obj;
+  }
+  
   /** @brief Atomically replaces the current value with desired. */
   void store(Type desired) { fData.store(desired); }
 
@@ -41,9 +56,7 @@ struct Atomic_t<Type> {
   {
     return fData.compare_exchange_strong(expected, desired);
   }
-
-  // Standard library atomic operations for integral types
-
+  
   // @brief Atomically assigns the desired value to the atomic variable.
   Type operator=(Type desired) { return fData.operator=(desired); }
 

@@ -13,12 +13,10 @@
 #include <AdePT/1/Atomic.h>
 
 struct SomeStruct {
-  int a = 0;
-  float b = 0.0;
   adept::Atomic_t<int> var_int;
   adept::Atomic_t<float> var_float;
 
-  SomeStruct() : var_int(a), var_float(b) {}
+  SomeStruct() : var_int(0), var_float(0.0) {}
 
   static SomeStruct *MakeInstanceAt(void *addr)
   {

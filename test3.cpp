@@ -23,10 +23,8 @@ struct MyTrack {
 struct Scoring {
   adept::Atomic_t<int> secondaries;
   adept::Atomic_t<float> totalEnergyLoss;
-  int a = 0;
-  float b = 0.0;
   
-  Scoring(): secondaries(a),totalEnergyLoss(b) {}
+  Scoring(): secondaries(0),totalEnergyLoss(0) {}
 
   static Scoring *MakeInstanceAt(void *addr)
   {
@@ -194,8 +192,8 @@ int main()
   buffer_scor       = (char *)sycl::malloc_shared(sizeof(Scoring), q_ct1);
   Scoring *scor = Scoring::MakeInstanceAt(buffer_scor);
   // Initialize scoring
-  scor->secondaries     = 0;
-  scor->totalEnergyLoss = 0;
+  // scor->secondaries = 0;
+  // scor->totalEnergyLoss = 0;
 
   // Allocate a block of tracks with capacity larger than the total number of spawned threads
   // Note that if we want to allocate several consecutive block in a buffer, we have to use

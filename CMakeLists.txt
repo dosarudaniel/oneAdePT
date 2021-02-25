@@ -9,7 +9,7 @@ if (NOT SYCL_ROOT)
   message(FATAL_ERROR "SYCL_ROOT not specified! Please specify -DSYCL_ROOT=<DPCPP_ROOT_PATH>")
 endif()
 
-set(CMAKE_VERBOSE_MAKEFILE 1)
+set(CMAKE_VERBOSE_MAKEFILE 0)
 
 macro(build_tests TESTS)
   foreach(TEST ${TESTS})
@@ -53,8 +53,9 @@ set(SYCL_FLAGS
   	"-fsycl-targets=nvptx64-nvidia-cuda-sycldevice"
   	"-fsycl-unnamed-lambda"
   	"-std=c++20"
-  	"-stdlib=libstdc++")
-
+  	"-stdlib=libstdc++"
+        "-Wno-unknown-cuda-version")
+      
 #set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128" "-DCOPCORE_CUDA_COMPILER" 
 set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128" "-I../../local/include")
 #"-DCOPCORE_DEVICE_COMPILATION" )

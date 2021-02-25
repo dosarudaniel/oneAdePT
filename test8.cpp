@@ -6,9 +6,8 @@
 struct SomeStruct {
   adept::Atomic_t<int> var_int;
   adept::Atomic_t<float> var_float;
-  int a = 0;
-  float b = 0;
-  SomeStruct(): var_int(a),var_float(b) {}
+  SomeStruct(): var_int(0),var_float(0) {} //<= this works as well
+					      //SomeStruct() {}
   static SomeStruct *MakeInstanceAt(void *addr)
   {
     SomeStruct *obj = new (addr) SomeStruct();
