@@ -1,33 +1,45 @@
-// SPDX-FileCopyrightText: 2020 CERN
-// SPDX-License-Identifier: Apache-2.0
-
 #include <CL/sycl.hpp>
+#include <cstdlib>
+#include <cstdio>
 
-// #include <iostream>
+#define N 100
 
-//#include <assert.h>
-// #include <stdlib.h>
-
-// class CUDADeviceSelector : public sycl::device_selector {
-// public:
-//   int operator()(const sycl::device &device) const override {
-//     return 1;
-//     /*
-//     if (device.get_platform().get_backend() == sycl::backend::cuda)
-//       return 1;
-//     else
-//       return -1;
-//     */
-//   }
-// };
-
-int main(void)
+void custom_kernel(int * dev_a)
 {
-  // const sycl::device  &dev_ct1 = sycl::device();
-    
-  // sycl::queue q_ct1{CUDADeviceSelector()};
-  
-
-
-  return 0;
+  for(int i=0; i<N; i++) {
+      dev_a[i] *= 2;
+   }
 }
+
+int main() {
+
+  sycl::default_selector device_selector;
+
+  sycl::queue q_ct1(device_selector);
+  std::cout <<  "Running on "
+	    << q_ct1.get_device().get_info<cl::sycl::info::device::name>()
+	    << "\n";
+  int *dev_a;
+
+  dev_a = sycl::malloc_shared<int>(N, q_ct1);
+
+  for(int i=0; i<N; i++) {
+      dev_a[i] = i;
+  }
+
+  q_ct1.submit([&](sycl::handler &cgh) {
+    cgh.parallel_for(
+        sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+        [=](sycl::nd_item<3> item_ct1) {
+          custom_kernel(dev_a);
+        });
+  });
+
+  q_ct1.wait_and_throw();
+
+  for(int i=0; i<N; i++) {
+      printf("%d %d\n",i,dev_a[i]);
+  }
+
+}
+  

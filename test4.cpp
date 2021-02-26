@@ -12,7 +12,7 @@ using Queue_t = adept::mpmc_bounded_queue<int>;
 
 void select_process(Queue_t *queues[], sycl::nd_item<3> item_ct1)
 {
-  //  queues[0]->enqueue(0);
+  queues[0]->enqueue(0);
 }
 
 
