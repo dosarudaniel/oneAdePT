@@ -24,7 +24,7 @@ struct Scoring {
   adept::Atomic_t<int> secondaries;
   adept::Atomic_t<float> totalEnergyLoss;
   
-  Scoring(): secondaries(0),totalEnergyLoss(0) {}
+  Scoring() {}
 
   static Scoring *MakeInstanceAt(void *addr)
   {

@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <cassert>
 #include <AdePT/1/Atomic.h>
-#include <CopCore/CopCore.h>
+#include <CopCore/1/CopCore.h>
 
 namespace adept {
 namespace internal {

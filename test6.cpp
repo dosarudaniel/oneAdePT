@@ -16,7 +16,7 @@ struct SomeStruct {
   adept::Atomic_t<int> var_int;
   adept::Atomic_t<float> var_float;
 
-  SomeStruct() : var_int(0), var_float(0.0) {}
+  SomeStruct() {};
 
   static SomeStruct *MakeInstanceAt(void *addr)
   {

@@ -57,9 +57,7 @@ set(SYCL_FLAGS
   	"-stdlib=libstdc++"
         "-Wno-unknown-cuda-version")
       
-#set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128" "-DCOPCORE_CUDA_COMPILER" 
 set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128" "-I../../local/include")
-#"-DCOPCORE_DEVICE_COMPILATION" )
 
 build_tests("${ONEAPI_UNIT_TESTS_BASE}")
 add_to_test("${ONEAPI_UNIT_TESTS_BASE}")
