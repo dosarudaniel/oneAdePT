@@ -3,7 +3,7 @@
 #include <AdePT/1/Atomic.h>
 #include <atomic>
 
-#define N 1
+#define N 10
 
 // Example data structure containing several atomics
 struct SomeStruct {
@@ -20,11 +20,10 @@ struct SomeStruct {
 // Kernel function to perform atomic addition
 void testAdd(SomeStruct *s)  {
   // Test fetch_add, fetch_sub
-  //for (int i=0; i<N; i++){
-    s->var_int.fetch_add(1);
-    s->var_float.fetch_add(1);
-    //s++; 
-    // }
+  for (int i=0; i<N; i++){
+    s[i].var_int.fetch_add(1);
+    s[i].var_float.fetch_add(1);
+   }
 }
 
 //______________________________________________________________________________________
@@ -40,16 +39,12 @@ int main(void)
 
   // Allocate the content of SomeStruct in a buffer
 
-  char *buffer = nullptr;
-  buffer        = (char*) sycl::malloc_shared(sizeof(SomeStruct)*N, q_ct1);
-  // SomeStruct *a = SomeStruct::MakeInstanceAt(buffer);
-  char *s = buffer;
+  SomeStruct *buffer = nullptr;
+  buffer        = (SomeStruct*) sycl::malloc_shared(sizeof(SomeStruct)*N, q_ct1);
 
   for (int i=0; i<N; i++) {
-      std::cout<<i;
-      SomeStruct *a = SomeStruct::MakeInstanceAt(buffer);
-      buffer += sizeof(SomeStruct);
-      std::cout << i <<","<< a->var_int.load() << "\n";
+      SomeStruct *a = SomeStruct::MakeInstanceAt(&buffer[i]);
+      std::cout << i <<","<< buffer[i].var_int.load() << "\n";
   }
 
     // Wait memory to reach device
@@ -67,11 +62,8 @@ int main(void)
   q_ct1.wait_and_throw();
   
   for (int i=0; i<N; i++) {
-      std::cout<<i;
-      std::cout << i <<","<< s->var_int.load() << "\n";
-      s++;
+      std::cout << i <<","<< buffer[i].var_int.load() << "\n";
   }
 
-  
   return(0);
 }
