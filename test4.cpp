@@ -15,7 +15,6 @@ void select_process(Queue_t *queues[], sycl::nd_item<3> item_ct1)
   queues[0]->enqueue(0);
 }
 
-
 int main()
 {
   sycl::default_selector device_selector;
@@ -25,11 +24,25 @@ int main()
 	    << q_ct1.get_device().get_info<cl::sycl::info::device::name>()
 	    << "\n";
 
+  constexpr int capacity = 1 << 20;
+
   using Queue_t = adept::mpmc_bounded_queue<int>;
 
-  Queue_t **queues = nullptr;
-  queues           = sycl::malloc_shared<Queue_t *>(3, q_ct1);
+  constexpr int numberOfProcesses = 3;
 
+  char *buffer[numberOfProcesses];
+
+  Queue_t **queues = nullptr;
+  queues           = sycl::malloc_shared<Queue_t *>(numberOfProcesses, q_ct1);
+
+  size_t buffersize = Queue_t::SizeOfInstance(capacity);
+
+  for (int i = 0; i < numberOfProcesses; i++) {
+    std::cout << i ; 
+    buffer[i] = (char *)sycl::malloc_shared(buffersize, q_ct1);
+    queues[i] = Queue_t::MakeInstanceAt(capacity, buffer[i]);  // It crashes here
+  }
+  /*
   sycl::range<3> nthreads(1, 1, 32);
 
   q_ct1.submit([&](sycl::handler &cgh) {
@@ -37,5 +50,9 @@ int main()
           select_process(queues, item_ct1);
       });
   });
+  */
   return 0;
 }
+
+ 
+ 
