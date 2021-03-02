@@ -7,28 +7,34 @@
  * @author Andrei Gheata (andrei.gheata@cern.ch)
  */
 
-#ifndef COPCORE_LAUNCHER_H_
-#define COPCORE_LAUNCHER_H_
+#ifndef COPCORE_1LAUNCHER_H_
+#define COPCORE_1LAUNCHER_H_
 
-#include <CopCore/Global.h>
+
+#include <CL/sycl.hpp>
+#include <dpct/dpct.hpp>
+#include <CopCore/1/Global.h>
 
 namespace copcore {
 
-#ifdef COPCORE_CUDA_COMPILER
 namespace kernel_launcher_impl {
 
 template <class Function, class... Args>
-__global__ void kernel_dispatch(int data_size, Function device_func_select, const Args... args)
+void kernel_dispatch(int data_size, Function device_func_select,
+                     sycl::nd_item<3> item_ct1, const Args... args)
 {
   // Initiate a grid-size loop to maximize reuse of threads and CPU compatibility, keeping adressing within warps
   // unit-stride
-  for (auto id = blockIdx.x * blockDim.x + threadIdx.x; id < data_size; id += blockDim.x * gridDim.x) {
+  for (auto id = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
+                 item_ct1.get_local_id(2);
+       id < data_size;
+       id += item_ct1.get_local_range().get(2) * item_ct1.get_group_range(2)) {
 
     device_func_select(id, args...);
   }
 }
 } // End namespace kernel_launcher_impl
-#endif
+
 
 template <BackendType backend>
 class LauncherBase {
@@ -67,7 +73,6 @@ public:
   }
 };
 
-#ifdef COPCORE_CUDA_COMPILER
 /** @brief Specialization of Launcher for the CUDA backend */
 template <>
 class Launcher<BackendType::CUDA> : public LauncherBase<BackendType::CUDA> {
@@ -77,9 +82,14 @@ private:
 public:
   Launcher(Stream_t stream = 0) : LauncherBase(stream)
   {
-    cudaGetDevice(&fDeviceId);
-    cudaDeviceGetAttribute(&fNumSMs, cudaDevAttrMultiProcessorCount, fDeviceId);
+    sycl::default_selector device_selector;
+    //sycl::queue fDeviceId(device_selector);
+    fDeviceId = dpct::dev_mgr::instance().current_device_id();
+    fNumSMs =
+    dpct::dev_mgr::instance().get_device(fDeviceId).get_max_compute_units();
   }
+
+
 
   template <class DeviceFunctionPtr, class... Args>
   int Run(DeviceFunctionPtr func, int n_elements, LaunchGrid_t grid, const Args &... args) const
@@ -94,32 +104,39 @@ public:
     // nMaxThreads = fNumSMs * warpsPerSM * 32; grid_size = nmaxthreads / block_size
     // if n_elements < nMaxThreads we reduce the grid size to minimize null threads
     LaunchGrid_t exec_grid{grid};
-    if (grid[1].x == 0) {
+    //if (grid[1].x == 0) {
       unsigned int grid_size =
           std::min(warpsPerSM * fNumSMs * 32 / block_size, (n_elements + block_size - 1) / block_size);
-      exec_grid[0].x = grid_size;
-      exec_grid[1].x = block_size;
+      //exec_grid[0].x = grid_size;
+      //exec_grid[1].x = block_size;
       // std::cout << "grid_size = " << grid_size << "  block_size = " << block_size << std::endl;
-    }
+      //}
 
     // launch the kernel
-    kernel_launcher_impl::kernel_dispatch<<<exec_grid[0], exec_grid[1], 0, fStream>>>(n_elements, func, args...);
-    COPCORE_CUDA_CHECK(cudaGetLastError());
+    dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+  	  cgh.parallel_for(
+	                   sycl::nd_range<3>(sycl::range<3>(1, 1,grid_size) * sycl::range<3>(1, 1, block_size),
+		  	   sycl::range<3>(1, 1, block_size)),
+		           [=](sycl::nd_item<3> item_ct1) {
+                             kernel_launcher_impl::kernel_dispatch(n_elements, func, args...);
+			   });
+    });
+  
+    //COPCORE_CUDA_CHECK(cudaGetLastError());
     return 0;
   }
 
   void WaitStream() const
   {
-    if (fStream)
-      COPCORE_CUDA_CHECK(cudaStreamSynchronize(fStream));
-    else
-      COPCORE_CUDA_CHECK(cudaDeviceSynchronize());
+      dpct::get_current_device().queues_wait_and_throw();
   }
 
-  static void WaitDevice() { COPCORE_CUDA_CHECK(cudaDeviceSynchronize()); }
+  static void WaitDevice() {
+    dpct::get_current_device().queues_wait_and_throw();
+  }
 
 }; // End  class Launcher<BackendType::CUDA>
-#endif
+
 
 /** @brief Specialization of Launcher for the CPU backend */
 template <>
@@ -143,4 +160,4 @@ public:
 
 } // End namespace copcore
 
-#endif // COPCORE_LAUNCHER_H_
+#endif // COPCORE_1LAUNCHER_H_

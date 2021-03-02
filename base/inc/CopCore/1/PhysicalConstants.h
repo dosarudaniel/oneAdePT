@@ -26,10 +26,10 @@
  *
  */
 
-#ifndef COPCORE_PHYSICALCONSTANTS_H
-#define COPCORE_PHYSICALCONSTANTS_H
+#ifndef COPCORE_1PHYSICALCONSTANTS_H
+#define COPCORE_1PHYSICALCONSTANTS_H
 
-#include <CopCore/SystemOfUnits.h>
+#include <CopCore/1/SystemOfUnits.h>
 
 namespace copcore {
 namespace units {

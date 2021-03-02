@@ -1,3 +1,5 @@
+#include <CL/sycl.hpp>
+#include <dpct/dpct.hpp>
 // SPDX-FileCopyrightText: 2020 CERN
 // SPDX-License-Identifier: Apache-2.0
 
@@ -47,11 +49,11 @@
  */
 
 
-#ifndef COPCORE_MACROS_H_
-#define COPCORE_MACROS_H_
+#ifndef COPCORE_1MACROS_H_
+#define COPCORE_1MACROS_H_
 
 // Macros for separating CUDA compiler from others
-#ifdef __CUDACC__
+#ifdef SYCL_LANGUAGE_VERSION
 #  define COPCORE_CUDA_COMPILER
 #endif
 
@@ -65,13 +67,13 @@
 #endif
 
 #ifndef __forceinline__
-#  define __forceinline__ inline __attribute__((always_inline))
+#  define __forceinline__ //inline __attribute__((always_inline))
 #endif
 
 // Definition of __CUDA_ARCH__ means we are compiling CUDA *and*
 // on the device compile pass
 // COPCORE_DEVICE_COMPILATION is defined in this case
-#ifdef __CUDA_ARCH__
+#ifdef DPCT_COMPATIBILITY_TEMP
 #  define COPCORE_DEVICE_COMPILATION
 #endif
 

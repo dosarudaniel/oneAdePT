@@ -1,10 +1,10 @@
 // SPDX-FileCopyrightText: 2020 CERN
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
-#ifndef COPCORE_RANLUXPP_H_
-#define COPCORE_RANLUXPP_H_
+#ifndef COPCORE_1RANLUXPP_H_
+#define COPCORE_1RANLUXPP_H_
 
-#include <CopCore/Global.h>
+#include <CopCore/1/Global.h>
 
 #include "mulmod.h"
 

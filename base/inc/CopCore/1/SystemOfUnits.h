@@ -33,8 +33,8 @@
  *
  */
 
-#ifndef COPCORE_SYSTEMOFUNITS_H
-#define COPCORE_SYSTEMOFUNITS_H
+#ifndef COPCORE_1SYSTEMOFUNITS_H
+#define COPCORE_1SYSTEMOFUNITS_H
 
 namespace copcore {
 namespace units {

@@ -10,19 +10,18 @@
  * Specializations are provided for CPU, CUDA and *TODO* HIP.
  */
 
+
 #include <cstddef>
 #include <stdexcept>
 #include <iostream>
 
-#include <CopCore/Global.h>
+#include <CopCore/1/Global.h>
 
 namespace copcore {
 
 template <class T, BackendType backend>
 class Allocator {
 };
-
-#ifdef COPCORE_CUDA_COMPILER
 
 /** @brief Partial allocator specialization for the CUDA backend */
 template <class T>
@@ -50,7 +49,12 @@ public:
 
     value_type *result = nullptr;
     auto obj_size      = sizeof(T);
-    COPCORE_CUDA_CHECK(cudaMallocManaged(&result, n * obj_size));
+
+    //    COPCORE_CUDA_CHECK(cudaMallocManaged(&result, n * obj_size));
+    sycl::default_selector device_selector;
+    sycl::queue q_ct1(device_selector);
+    result = sycl::malloc_shared<char>(n*obj_size, q_ct1);
+    q_ct1.wait_and_throw();
     value_type *current = result;
 
     // allocate all objects at their aligned positions in the buffer
@@ -74,7 +78,7 @@ public:
     }
 
     // Release the memory
-    COPCORE_CUDA_CHECK(cudaFree(ptr));
+    //COPCORE_CUDA_CHECK(cudaFree(ptr));
     SetDevice(old_device);
   }
 
@@ -91,7 +95,6 @@ private:
 
   int fDeviceId{0}; ///< Device id
 };
-#endif
 
 /** @brief Partial allocator specialization for the CPU backend */
 template <class T>

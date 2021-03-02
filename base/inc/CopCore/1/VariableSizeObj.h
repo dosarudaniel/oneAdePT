@@ -123,16 +123,18 @@
  * If omitting new_size above, the copy will have the same size as the source.
  */
 
-#ifndef COPCORE_VARIABLESIZEOBJ_H
-#define COPCORE_VARIABLESIZEOBJ_H
+#ifndef COPCORE_1VARIABLESIZEOBJ_H
+#define COPCORE_1VARIABLESIZEOBJ_H
 
-#include <CopCore/Global.h>
+#include <CL/sycl.hpp>
+#include <dpct/dpct.hpp>
+#include <CopCore/1/Global.h>
 
 // For memset and memcpy
 #include <string.h>
 #include <cassert>
 
-class TRootIOCtor;
+//class TRootIOCtor;
 
 namespace copcore {
 
@@ -145,37 +147,41 @@ public:
   const Index_t fN : 31; // Number of elements.
   V fRealArray[1];       //! Beginning address of the array values -- real size: [fN]
 
-  VariableSizeObj(TRootIOCtor *) : fSelfAlloc(false), fN(0) {}
+  VariableSizeObj(VariableSizeObj *) : fSelfAlloc(false), fN(0) {}
 
-  __forceinline__
-  __host__ __device__
-  VariableSizeObj(unsigned int nvalues) : fSelfAlloc(false), fN(nvalues) {
+  __dpct_inline__
+
+  VariableSizeObj(unsigned int nvalues)  : fSelfAlloc(false), fN(nvalues) {
     for (unsigned i = 0; i < nvalues; i++) {
       new (&fRealArray[0] + i) V();
     }
   }
-  
-  __forceinline__
-  __host__ __device__
-  VariableSizeObj(const VariableSizeObj &other) : fSelfAlloc(false), fN(other.fN)
+
+  __dpct_inline__
+
+  VariableSizeObj(const VariableSizeObj &other)
+      : fSelfAlloc(false), fN(other.fN)
   {
     if (other.fN) memcpy(GetValues(), other.GetValues(), (other.fN) * sizeof(V));
   }
 
-  __forceinline__
-  __host__ __device__
-  VariableSizeObj(size_t new_size, const VariableSizeObj &other) : fSelfAlloc(false), fN(new_size)
+  __dpct_inline__
+
+  VariableSizeObj(size_t new_size, const VariableSizeObj &other)
+      : fSelfAlloc(false), fN(new_size)
   {
     if (other.fN) memcpy(GetValues(), other.GetValues(), (other.fN) * sizeof(V));
   }
 
-  __forceinline__ __host__ __device__ V *GetValues() { return &fRealArray[0]; }
-  __forceinline__ __host__ __device__ const V *GetValues() const { return &fRealArray[0]; }
+  __dpct_inline__ V *GetValues() { return &fRealArray[0]; }
+  __dpct_inline__ const V *GetValues() const { return &fRealArray[0]; }
 
-  __forceinline__ __host__ __device__ V &operator[](Index_t index) { return GetValues()[index]; };
-  __forceinline__ __host__ __device__ const V &operator[](Index_t index) const { return GetValues()[index]; };
+  __dpct_inline__ V &operator[](Index_t index) { return GetValues()[index]; };
+  __dpct_inline__ const V &operator[](Index_t index) const {
+    return GetValues()[index];
+  };
 
-  __forceinline__ __host__ __device__ VariableSizeObj &operator=(const VariableSizeObj &rhs)
+  __dpct_inline__ VariableSizeObj &operator=(const VariableSizeObj &rhs)
   {
     // Copy data content using memcpy, limited by the respective size
     // of the the object.  If this is smaller there is data truncation,
@@ -204,7 +210,7 @@ public:
   // The static maker to be used to create an instance of the variable size object.
 
   template <typename... T>
-  __host__ __device__ static Cont *MakeInstance(size_t nvalues, const T &... params)
+  static Cont *MakeInstance(size_t nvalues, const T &... params)
   {
     // Make an instance of the class which allocates the node array. To be
     // released using ReleaseInstance.
@@ -218,7 +224,7 @@ public:
   }
 
   template <typename... T>
-  __host__ __device__ static Cont *MakeInstanceAt(size_t nvalues, void *addr, const T &... params)
+  static Cont *MakeInstanceAt(size_t nvalues, void *addr, const T &... params)
   {
     // Make an instance of the class which allocates the node array. To be
     // released using ReleaseInstance. If addr is non-zero, the user promised that
@@ -227,14 +233,14 @@ public:
       return MakeInstance(nvalues, params...);
     } else {
       assert((((unsigned long long)addr) % alignof(Cont)) == 0 && "addr does not satisfy alignment");
-      Cont *obj                         = new (addr) Cont(nvalues, params...);
+      Cont *obj  = new (addr) Cont(nvalues, params...);
       obj->GetVariableData().fSelfAlloc = false;
       return obj;
     }
   }
 
   // The equivalent of the copy constructor
-  __host__ __device__
+  
   static Cont *MakeCopy(const Cont &other)
   {
     // Make a copy of the variable size array and its container.
@@ -242,12 +248,12 @@ public:
     size_t needed = SizeOf(other.GetVariableData().fN);
     char *ptr     = new char[needed];
     if (!ptr) return 0;
-    Cont *copy                         = new (ptr) Cont(other);
+    Cont *copy    = new (ptr) Cont(other);
     copy->GetVariableData().fSelfAlloc = true;
     return copy;
   }
 
-  __host__ __device__
+  
   static Cont *MakeCopy(size_t new_size, const Cont &other)
   {
     // Make a copy of a the variable size array and its container with
@@ -256,18 +262,18 @@ public:
     size_t needed = SizeOf(new_size);
     char *ptr     = new char[needed];
     if (!ptr) return 0;
-    Cont *copy                         = new (ptr) Cont(new_size, other);
+    Cont *copy    = new (ptr) Cont(new_size, other);
     copy->GetVariableData().fSelfAlloc = true;
     return copy;
   }
 
   // The equivalent of the copy constructor
-  __host__ __device__
+  
   static Cont *MakeCopyAt(const Cont &other, void *addr)
   {
     // Make a copy of a the variable size array and its container at the location (if indicated)
     if (addr) {
-      Cont *copy                         = new (addr) Cont(other);
+      Cont *copy   = new (addr) Cont(other);
       copy->GetVariableData().fSelfAlloc = false;
       return copy;
     } else {
@@ -276,7 +282,7 @@ public:
   }
 
   // The equivalent of the copy constructor
-  __host__ __device__
+  
   static Cont *MakeCopyAt(size_t new_size, const Cont &other, void *addr)
   {
     // Make a copy of a the variable size array and its container at the location (if indicated)
@@ -290,7 +296,7 @@ public:
   }
 
   // The equivalent of the destructor
-  __host__ __device__
+  
   static void ReleaseInstance(Cont *obj)
   {
     // Releases the space allocated for the object
@@ -299,26 +305,26 @@ public:
   }
 
   // Equivalent of sizeof function (not taking into account padding for alignment)
-  __host__ __device__
+  
   static constexpr size_t SizeOf(size_t nvalues)
   {
     return (sizeof(Cont) + Cont::SizeOfExtra(nvalues) + sizeof(V) * (nvalues - 1));
   }
 
   // Size of the allocated derived type data members that are also variable size
-  __host__ __device__
+  
   static constexpr size_t SizeOfExtra(size_t nvalues) { return 0; }
 
   // equivalent of sizeof function taking into account padding for alignment
   // this function should be used when making arrays of VariableSizeObjects
-  __host__ __device__
+  
   static constexpr size_t SizeOfAlignAware(size_t nvalues) { return SizeOf(nvalues) + RealFillUp(nvalues); }
 
 private:
-  __host__ __device__
+  
   static constexpr size_t FillUp(size_t nvalues) { return alignof(Cont) - SizeOf(nvalues) % alignof(Cont); }
 
-  __host__ __device__
+  
   static constexpr size_t RealFillUp(size_t nvalues)
   {
     return (FillUp(nvalues) == alignof(Cont)) ? 0 : FillUp(nvalues);
