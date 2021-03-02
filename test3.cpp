@@ -2,37 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <CL/sycl.hpp>
-//#include <dpct/dpct.hpp>
 #include <oneapi/mkl.hpp>
 #include <oneapi/mkl/rng/device.hpp>
 #include <iostream>
 
-#include <AdePT/BlockData.h>
+#include <AdePT/1/BlockData.h>
 
-class CUDADeviceSelector : public sycl::device_selector {
-public:
-  int operator()(const sycl::device &device) const override {
-    return 1;
-    /*
-    if (device.get_platform().get_backend() == sycl::backend::cuda)
-      return 1;
-    else
-      return -1;
-    */
-  }
-};
-
-sycl::string_class get_type(const sycl::device& dev) {
-  if (dev.is_host()) {
-    return "host";
-  } else if (dev.is_gpu()) {
-    return "OpenCL.GPU";
-  } else if (dev.is_accelerator()) {
-    return "OpenCL.ACC";
-  } else {
-    return "OpenCL.CPU";
-  }
-}
 using Queue_t = adept::mpmc_bounded_queue<int>;
 
 struct MyTrack {
@@ -48,11 +23,9 @@ struct MyTrack {
 struct Scoring {
   adept::Atomic_t<int> secondaries;
   adept::Atomic_t<float> totalEnergyLoss;
-
   
   Scoring() {}
 
-  
   static Scoring *MakeInstanceAt(void *addr)
   {
     Scoring *obj = new (addr) Scoring();
@@ -171,17 +144,13 @@ void init(oneapi::mkl::rng::device::philox4x32x10<1> *states)
 
 int main()
 {
-  //dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  const sycl::device  &dev_ct1 = sycl::device();
+  sycl::default_selector device_selector;
 
-  std::cout << "Default device type: " << get_type(dev_ct1) << std::endl;
-
-  for (const auto& dev : sycl::device::get_devices()) {
-    std::cout << "Device is available of type: " << get_type(dev) << std::endl;
-  }
-
-  sycl::queue q_ct1{CUDADeviceSelector()};
-  
+  sycl::queue q_ct1(device_selector);
+  std::cout <<  "Running on "
+	    << q_ct1.get_device().get_info<cl::sycl::info::device::name>()
+	    << "\n";
+   
   /*
   DPCT1032:5: Different generator is used, you may need to adjust the code.
   */
@@ -223,8 +192,8 @@ int main()
   buffer_scor       = (char *)sycl::malloc_shared(sizeof(Scoring), q_ct1);
   Scoring *scor = Scoring::MakeInstanceAt(buffer_scor);
   // Initialize scoring
-  scor->secondaries     = 0;
-  scor->totalEnergyLoss = 0;
+  // scor->secondaries = 0;
+  // scor->totalEnergyLoss = 0;
 
   // Allocate a block of tracks with capacity larger than the total number of spawned threads
   // Note that if we want to allocate several consecutive block in a buffer, we have to use
