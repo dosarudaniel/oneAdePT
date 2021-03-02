@@ -13,8 +13,9 @@
 #include <cstddef>
 #include <stdexcept>
 #include <iostream>
+#include <cassert>
 
-#include <CopCore/Global.h>
+#include <CopCore/1/Global.h>
 
 namespace copcore {
 
@@ -22,7 +23,7 @@ template <class T, BackendType backend>
 class VariableSizeObjAllocator {
 };
 
-#ifdef COPCORE_CUDA_COMPILER
+  //#ifdef COPCORE_CUDA_COMPILER
 
 /** @brief Partial variable-size allocator specialization for the CUDA backend */
 template <class T>
@@ -48,27 +49,30 @@ public:
   template <typename... P>
   value_type *allocate(std::size_t n, const P &... params) const
   {
-    int old_device = SetDevice(fDeviceId);
+    //int old_device = SetDevice(fDeviceId);
 
     value_type *result   = nullptr;
     std::size_t obj_size = T::SizeOfAlignAware(fCapacity);
-    COPCORE_CUDA_CHECK(cudaMallocManaged(&result, n * obj_size));
-    char *buff = (char *)result;
 
+    //    COPCORE_CUDA_CHECK(cudaMallocManaged(&result, n * obj_size));
+    sycl::default_selector device_selector;
+    sycl::queue q_ct1(device_selector);
+    result = sycl::malloc_shared<char>(n*obj_size, q_ct1);
+    char *buff = (char *)result;
+    q_ct1.wait_and_throw();
     // allocate all objects at their aligned positions in the buffer
     for (auto i = 0; i < n; ++i) {
       T::MakeInstanceAt(fCapacity, buff, params...);
       buff += obj_size;
     }
-
-    SetDevice(old_device);
+    //SetDevice(old_device);
 
     return result;
   }
 
   void deallocate(value_type *ptr, std::size_t n = 0) const
   {
-    int old_device       = SetDevice(fDeviceId);
+    //int old_device       = SetDevice(fDeviceId);
     std::size_t obj_size = T::SizeOfAlignAware(fCapacity);
     char *buff           = (char *)ptr;
 
@@ -79,8 +83,8 @@ public:
     }
 
     // Release the memory
-    COPCORE_CUDA_CHECK(cudaFree(ptr));
-    SetDevice(old_device);
+    //COPCORE_CUDA_CHECK(cudaFree(ptr));
+    //SetDevice(old_device);
   }
 
   int GetDevice() const { return fDeviceId; }
@@ -91,15 +95,15 @@ private:
   static int SetDevice(int new_device)
   {
     int old_device = -1;
-    COPCORE_CUDA_CHECK(cudaGetDevice(&old_device));
-    COPCORE_CUDA_CHECK(cudaSetDevice(new_device));
+    //COPCORE_CUDA_CHECK(cudaGetDevice(&old_device));
+    //COPCORE_CUDA_CHECK(cudaSetDevice(new_device));
     return old_device;
   }
 
   std::size_t fCapacity{0}; ///< Capacity of each VariableSizeObj container
   int fDeviceId{0};         ///< Device id
 };
-#endif
+  //#endif
 
 /** @brief Partial variable-size allocator specialization for the CPU backend */
 template <class T>

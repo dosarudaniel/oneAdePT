@@ -7,10 +7,12 @@
  * @author Andrei Gheata (andrei.gheata@cern.ch)
  */
 
-#ifndef ADEPT_LAUNCH_GRID_H_
-#define ADEPT_LAUNCH_GRID_H_
+#ifndef ADEPT_1LAUNCH_GRID_H_
+#define ADEPT_1LAUNCH_GRID_H_
 
-#include "Global.h"
+#include <CL/sycl.hpp>
+#include <dpct/dpct.hpp>
+#include <CopCore/1/Global.h>
 
 namespace copcore {
 
@@ -28,39 +30,39 @@ public:
   launch_grid(int n_blocks, int n_threads) : fGrid{n_blocks, n_threads} {}
 
   /** @brief Access either block [0] or thread [1] grid */
-  __host__ __device__
+  
   int operator[](int index) { return fGrid[index]; }
 
   /** @brief Access either block [0] or thread [1] grid */
-  __host__ __device__
+  
   int operator[](int index) const { return fGrid[index]; }
 
 }; // End class launch_grid<BackendType::CPU>
 
-#ifdef COPCORE_CUDA_COMPILER
 template <>
 class launch_grid<BackendType::CUDA> {
 private:
-  dim3 fGrid[2]; ///< Block and thread index grid
+  sycl::range<3> fGrid[2]; ///< Block and thread index grid
 
 public:
   /** @brief Construct from block and thread grids */
-  __host__ __device__
-  launch_grid(const dim3 &block_index, const dim3 &thread_index) : fGrid{block_index, thread_index} {}
+
+  launch_grid(const sycl::range<3> &block_index,
+              const sycl::range<3> &thread_index)
+      : fGrid{block_index, thread_index} {}
 
   /** @brief Default constructor */
-  __host__ __device__
-  launch_grid() : launch_grid(dim3(), dim3()) {}
+
+  //  launch_grid() : launch_grid(sycl::range<3>(), sycl::range<3>()) {}
 
   /** @brief Access either block [0] or thread [1] grid */
-  __host__ __device__
-  dim3 &operator[](int index) { return fGrid[index]; }
+
+  sycl::range<3> &operator[](int index) { return fGrid[index]; }
 
   /** @brief Access either block [0] or thread [1] grid */
-  __host__ __device__
-  const dim3 &operator[](int index) const { return fGrid[index]; }
+
+  const sycl::range<3> &operator[](int index) const { return fGrid[index]; }
 }; // End class launch_grid<BackendType::CUDA>
-#endif
 
 } // End namespace copcore
 

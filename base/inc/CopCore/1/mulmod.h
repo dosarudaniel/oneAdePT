@@ -1,12 +1,15 @@
 // SPDX-FileCopyrightText: 2020 CERN
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
+#define DPCT_USM_LEVEL_NONE
+#include <CL/sycl.hpp>
+#include <dpct/dpct.hpp>
 #include <cstdint>
 
-#include "CopCore/Global.h"
+#include "CopCore/1/Global.h"
 
 /// Compute `a + b` and set `overflow` accordingly.
-__host__ __device__
+
 static inline uint64_t add_overflow(uint64_t a, uint64_t b, unsigned &overflow)
 {
   uint64_t add = a + b;
@@ -15,7 +18,7 @@ static inline uint64_t add_overflow(uint64_t a, uint64_t b, unsigned &overflow)
 }
 
 /// Compute `a + b` and increment `carry` if there was an overflow
-__host__ __device__
+
 static inline uint64_t add_carry(uint64_t a, uint64_t b, unsigned &carry)
 {
   unsigned overflow;
@@ -27,7 +30,7 @@ static inline uint64_t add_carry(uint64_t a, uint64_t b, unsigned &carry)
 }
 
 /// Compute `a - b` and set `overflow` accordingly
-__host__ __device__
+
 static inline uint64_t sub_overflow(uint64_t a, uint64_t b, unsigned &overflow)
 {
   uint64_t sub = a - b;
@@ -36,7 +39,7 @@ static inline uint64_t sub_overflow(uint64_t a, uint64_t b, unsigned &overflow)
 }
 
 /// Compute `a - b` and increment `carry` if there was an overflow
-__host__ __device__
+
 static inline uint64_t sub_carry(uint64_t a, uint64_t b, unsigned &carry)
 {
   unsigned overflow;
@@ -52,13 +55,14 @@ static inline uint64_t sub_carry(uint64_t a, uint64_t b, unsigned &carry)
 /// \param[in] in1 first factor as 9 numbers of 64 bits each
 /// \param[in] in2 second factor as 9 numbers of 64 bits each
 /// \param[out] out result with 18 numbers of 64 bits each
-__host__ __device__
+
 void multiply9x9(const uint64_t *in1, const uint64_t *in2, uint64_t *out)
 {
   uint64_t next      = 0;
   unsigned nextCarry = 0;
 
-#if defined(__clang__) || defined(__INTEL_COMPILER) || defined(__CUDACC__)
+#if defined(__clang__) || defined(__INTEL_COMPILER) ||                         \
+    defined(SYCL_LANGUAGE_VERSION)
 #pragma unroll
 #elif defined(__GNUC__) && __GNUC__ >= 8
 // This pragma was introduced in GCC version 8.
@@ -71,7 +75,8 @@ void multiply9x9(const uint64_t *in1, const uint64_t *in2, uint64_t *out)
     next      = 0;
     nextCarry = 0;
 
-#if defined(__clang__) || defined(__INTEL_COMPILER) || defined(__CUDACC__)
+#if defined(__clang__) || defined(__INTEL_COMPILER) ||                         \
+    defined(SYCL_LANGUAGE_VERSION)
 #pragma unroll
 #elif defined(__GNUC__) && __GNUC__ >= 8
 // This pragma was introduced in GCC version 8.
@@ -83,7 +88,8 @@ void multiply9x9(const uint64_t *in1, const uint64_t *in2, uint64_t *out)
 
       uint64_t fac1 = in1[j];
       uint64_t fac2 = in2[k];
-#if defined(__SIZEOF_INT128__) && !defined(ROOT_NO_INT128) && !defined(__CUDA_ARCH__)
+#if defined(__SIZEOF_INT128__) && !defined(ROOT_NO_INT128) &&                  \
+    !defined(DPCT_COMPATIBILITY_TEMP)
       unsigned __int128 prod = fac1;
       prod                   = prod * fac2;
 
@@ -167,7 +173,7 @@ void multiply9x9(const uint64_t *in1, const uint64_t *in2, uint64_t *out)
 ///
 /// Note that this function does *not* return the smallest value congruent to
 /// the modulus, it only guarantees a value smaller than \f$ 2^{576} \$!
-__host__ __device__
+
 void mod_m(const uint64_t *mul, uint64_t *out)
 {
   uint64_t r[9] = {0};
@@ -313,7 +319,7 @@ void mod_m(const uint64_t *mul, uint64_t *out)
 ///
 /// \param[in] in1 first factor with 9 numbers of 64 bits each
 /// \param[inout] inout second factor and also the output of the same size
-__host__ __device__
+
 void mulmod(const uint64_t *in1, uint64_t *inout)
 {
   uint64_t mul[2 * 9] = {0};
@@ -328,7 +334,7 @@ void mulmod(const uint64_t *in1, uint64_t *inout)
 /// \param[in] n exponent
 ///
 /// The arguments base and res may point to the same location.
-__host__ __device__
+
 void powermod(const uint64_t *base, uint64_t *res, uint64_t n)
 {
   uint64_t fac[9] = {0};
