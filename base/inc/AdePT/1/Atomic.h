@@ -25,7 +25,7 @@ struct AtomicBase_t {
 
   using AtomicType_t =  sycl::ONEAPI::atomic_ref<Type,
 			sycl::ONEAPI::memory_order::relaxed,
-			sycl::ONEAPI::memory_scope::device,
+			sycl::ONEAPI::memory_scope::system,
 			sycl::access::address_space::global_space>;
 
   Type a = 0; AtomicType_t fData{a};

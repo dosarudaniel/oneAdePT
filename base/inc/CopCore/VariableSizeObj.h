@@ -149,8 +149,12 @@ public:
 
   __forceinline__
   __host__ __device__
-  VariableSizeObj(unsigned int nvalues) : fSelfAlloc(false), fN(nvalues) {}
-
+  VariableSizeObj(unsigned int nvalues) : fSelfAlloc(false), fN(nvalues) {
+    for (unsigned i = 0; i < nvalues; i++) {
+      new (&fRealArray[0] + i) V();
+    }
+  }
+  
   __forceinline__
   __host__ __device__
   VariableSizeObj(const VariableSizeObj &other) : fSelfAlloc(false), fN(other.fN)
