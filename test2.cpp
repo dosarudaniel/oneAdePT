@@ -3,7 +3,7 @@
 
 #include <CL/sycl.hpp>
 //#include <dpct/dpct.hpp>
-#include <CopCore/Ranluxpp.h>
+#include <CopCore/1/Ranluxpp.h>
 
 #include <iostream>
 #include <stdlib.h>

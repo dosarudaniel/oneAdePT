@@ -12,7 +12,7 @@
 
 void __assert_fail(const char * assertion, const char * file, unsigned int line, const char * function)
 {
-
+ 
 }
 
 void kernel(RanluxppDouble *r, double *d, uint64_t *i, double *d2)
@@ -32,9 +32,6 @@ int main(void)
 	    << q_ct1.get_device().get_info<cl::sycl::info::device::name>()
 	    << "\n";
 
-  //dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  dpct::device_ext &dev_ct1 = q_ct1::get_current_device();
-  
   RanluxppDouble r;
   std::cout << "double: " << r.Rndm() << std::endl;
   std::cout << "int: " << r.IntRndm() << std::endl;
