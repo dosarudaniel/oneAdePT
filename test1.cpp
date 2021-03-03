@@ -3,7 +3,7 @@
 
 #include <CL/sycl.hpp>
 #include <dpct/dpct.hpp>
-#include <CopCore/Ranluxpp.h>
+#include <CopCore/1/Ranluxpp.h>
 
 #include <iostream>
 
@@ -25,9 +25,16 @@ void kernel(RanluxppDouble *r, double *d, uint64_t *i, double *d2)
 
 int main(void)
 {
-  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  sycl::queue &q_ct1        = dev_ct1.default_queue();
+  sycl::default_selector device_selector;
 
+  sycl::queue q_ct1(device_selector);
+  std::cout <<  "Running on "
+	    << q_ct1.get_device().get_info<cl::sycl::info::device::name>()
+	    << "\n";
+
+  //dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  dpct::device_ext &dev_ct1 = q_ct1::get_current_device();
+  
   RanluxppDouble r;
   std::cout << "double: " << r.Rndm() << std::endl;
   std::cout << "int: " << r.IntRndm() << std::endl;
@@ -46,7 +53,9 @@ int main(void)
 
   // Transfer the state of the generator to the device.
   q_ct1.memcpy(r_dev, &r, sizeof(RanluxppDouble)).wait();
-  dev_ct1.queues_wait_and_throw();
+
+  //dev_ct1.queues_wait_and_throw();
+  q_ct1.wait_and_throw();
 
   q_ct1.submit([&](sycl::handler &cgh) {
     cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -54,7 +63,9 @@ int main(void)
                        kernel(r_dev, d_dev_ptr, i_dev_ptr, d2_dev_ptr);
                      });
   });
-  dev_ct1.queues_wait_and_throw();
+
+  q_ct1.wait_and_throw();
+  //dev_ct1.queues_wait_and_throw();
 
   // Generate from the same state on the host.
   double d   = r.Rndm();
@@ -71,7 +82,8 @@ int main(void)
   q_ct1.memcpy(&i_dev, i_dev_ptr, sizeof(uint64_t)).wait();
   q_ct1.memcpy(&d2_dev, d2_dev_ptr, sizeof(double)).wait();
 
-  dev_ct1.queues_wait_and_throw();
+  //  dev_ct1.queues_wait_and_throw();
+  q_ct1.wait_and_throw();
 
   int ret = 0;
 
