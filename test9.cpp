@@ -8,7 +8,6 @@
  */
 
 #include <CL/sycl.hpp>
-#include <dpct/dpct.hpp>
 #include <iostream>
 #include <cassert>
 #include <AdePT/1/BlockData.h>
@@ -46,14 +45,13 @@ int main(void)
   std::cout <<  "Running on "
 	    << q_ct1.get_device().get_info<cl::sycl::info::device::name>()
 	    << "\n";
-
+  
   using Block_t         = adept::BlockData<MyTrack>;
   const char *result[2] = {"FAILED", "OK"};
   // Track capacity of the block
   constexpr int capacity = 1 << 20;
 
   // Define the kernels granularity: 10K blocks of 32 treads each
-  //constexpr sycl::range<3> nblocks(1, 1, 10000), nthreads(1, 1, 32);
   const sycl::range<3> nblocks(1, 1, 10000), nthreads(1, 1, 32);
 
   // Allocate a block of tracks with capacity larger than the total number of spawned threads
@@ -123,14 +121,7 @@ int main(void)
   std::cout << "   host MakeInstanceAt          ... ";
   size_t blocksize = Block_t::SizeOfInstance(capacity);
   char *buffer     = nullptr;
-  /*
-  DPCT1004:0: Could not generate replacement.
-  */
-  
-  //cudaMallocManaged(&buffer, blocksize);
-  //buffer        = (char *)sycl::malloc_shared(blocksize, q_ct1);
-  buffer =  sycl::malloc_shared<char>(blocksize, q_ct1);
-  
+  buffer           = (char *)sycl::malloc_shared(blocksize, q_ct1);
   auto block = Block_t::MakeInstanceAt(capacity, buffer);
   testOK &= block != nullptr;
   std::cout << result[testOK] << "\n";
@@ -142,22 +133,15 @@ int main(void)
   q_ct1.wait_and_throw();
   // Launch a kernel processing tracks
   /*
-  DPCT1049:1: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query
+  DPCT1049:0: The workgroup size passed to the SYCL kernel may exceed the limit. To get the device limit, query
   info::device::max_work_group_size. Adjust the workgroup size if needed.
   */
-  {
-    std::pair<dpct::buffer_t, size_t> block_buf_ct0 = dpct::get_buffer_and_offset(block);
-    size_t block_offset_ct0                         = block_buf_ct0.second;
-    q_ct1.submit([&](sycl::handler &cgh) {
-      auto block_acc_ct0 = block_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
-
-      cgh.parallel_for(sycl::nd_range<3>(nblocks * nthreads, nthreads), [=](sycl::nd_item<3> item_ct1) {
-        adept::BlockData<MyTrack> *block_ct0 = (adept::BlockData<MyTrack> *)(&block_acc_ct0[0] + block_offset_ct0);
-        //testTrackBlock(block_ct0, item_ct1);
-      });
+  q_ct1.submit([&](sycl::handler &cgh) {
+    cgh.parallel_for(sycl::nd_range<3>(nblocks * nthreads, nthreads), [=](sycl::nd_item<3> item_ct1) {
+      testTrackBlock(block, item_ct1);
     });
-  } ///< note that we are passing a host block type allocated on device
-    ///< memory - works because the layout is the same
+  }); ///< note that we are passing a host block type allocated on device
+      ///< memory - works because the layout is the same
   // Allow all warps to finish
   q_ct1.wait_and_throw();
   // The number of used tracks should be equal to the number of spawned threads
@@ -181,38 +165,22 @@ int main(void)
   // Now release 32K tracks
   testOK = true;
   std::cout << "   device ReleaseElement        ... ";
-  {
-    std::pair<dpct::buffer_t, size_t> block_buf_ct0 = dpct::get_buffer_and_offset(block);
-    size_t block_offset_ct0                         = block_buf_ct0.second;
-    q_ct1.submit([&](sycl::handler &cgh) {
-      auto block_acc_ct0 = block_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
-
-      cgh.parallel_for(
-          sycl::nd_range<3>(sycl::range<3>(1, 1, 1000) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
-          [=](sycl::nd_item<3> item_ct1) {
-            adept::BlockData<MyTrack> *block_ct0 = (adept::BlockData<MyTrack> *)(&block_acc_ct0[0] + block_offset_ct0);
-            releaseTrack(block_ct0, item_ct1);
-          });
-    });
-  }
+  q_ct1.submit([&](sycl::handler &cgh) {
+    cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, 1000) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
+                     [=](sycl::nd_item<3> item_ct1) {
+                       releaseTrack(block, item_ct1);
+                     });
+  });
   q_ct1.wait_and_throw();
   testOK &= block->GetNused() == nblocks[2] * nthreads[2] - 32000;
   testOK &= block->GetNholes() == 32000;
   // Now allocate in the holes
-  {
-    std::pair<dpct::buffer_t, size_t> block_buf_ct0 = dpct::get_buffer_and_offset(block);
-    size_t block_offset_ct0                         = block_buf_ct0.second;
-    q_ct1.submit([&](sycl::handler &cgh) {
-      auto block_acc_ct0 = block_buf_ct0.first.get_access<sycl::access::mode::read_write>(cgh);
-
-      cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, 10) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
-                       [=](sycl::nd_item<3> item_ct1) {
-                         adept::BlockData<MyTrack> *block_ct0 =
-                             (adept::BlockData<MyTrack> *)(&block_acc_ct0[0] + block_offset_ct0);
-                         testTrackBlock(block_ct0, item_ct1);
-                       });
-    });
-  }
+  q_ct1.submit([&](sycl::handler &cgh) {
+    cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, 10) * sycl::range<3>(1, 1, 32), sycl::range<3>(1, 1, 32)),
+                     [=](sycl::nd_item<3> item_ct1) {
+                       testTrackBlock(block, item_ct1);
+                     });
+  });
   q_ct1.wait_and_throw();
   testOK &= block->GetNholes() == (32000 - 320);
   std::cout << result[testOK] << "\n";
