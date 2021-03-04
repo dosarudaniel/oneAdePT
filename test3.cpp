@@ -223,9 +223,7 @@ int main()
     numBlocks[2] = (block->GetNused() + block->GetNholes() + nthreads[2] - 1) / nthreads[2];
 
     // here I set the maximum number of blocks
-
     numBlocks_transport[2] = std::min(numBlocks[2], maxBlocks[2]);
-
 
     q_ct1.submit([&](sycl::handler &cgh) {
       auto queues_size_ct0 = queues[2]->size();
@@ -239,8 +237,8 @@ int main()
     
     q_ct1.submit([&](sycl::handler &cgh) {
       cgh.parallel_for(sycl::nd_range<3>(numBlocks * nthreads, nthreads), [=](sycl::nd_item<3> item_ct1) {
-        // select_process(block, scor, state, queues, item_ct1);
-      });
+        select_process(block, scor, state, queues, item_ct1);
+      }); 
     });
     
     q_ct1.wait_and_throw();
@@ -255,7 +253,7 @@ int main()
       auto queues_ct4      = queues[0];
 
       cgh.parallel_for(sycl::nd_range<3>(numBlocks_eloss * nthreads, nthreads), [=](sycl::nd_item<3> item_ct1) {
-        // process_eloss(queues_size_ct0, block, scor, state, queues_ct4, item_ct1);
+        process_eloss(queues_size_ct0, block, scor, state, queues_ct4, item_ct1);
       });
     });
 
@@ -264,7 +262,7 @@ int main()
       auto queues_ct4      = queues[1];
 
       cgh.parallel_for(sycl::nd_range<3>(numBlocks_pairprod * nthreads, nthreads), [=](sycl::nd_item<3> item_ct1) {
-        // process_pairprod(queues_size_ct0, block, scor, state, queues_ct4, item_ct1);
+       process_pairprod(queues_size_ct0, block, scor, state, queues_ct4, item_ct1);
       });
     });
 
@@ -274,5 +272,4 @@ int main()
     std::cout << "Total energy loss " << scor->totalEnergyLoss.load() << " number of secondaries "
               << scor->secondaries.load() << " blocks used " << block->GetNused() << std::endl;
   }
-
 }

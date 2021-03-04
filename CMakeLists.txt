@@ -43,6 +43,7 @@ set(ONEAPI_UNIT_TESTS_BASE
   test7.cpp                    # converted (and modified) test_atomic.cu 
   test8.cpp                    # converted (and modified) test_atomic.cu using oneAtomic.h
   test9.cpp                    # converted and modified  test_track_block.cu
+  test10.cpp                   # reconverted cufisher_price_v2.cu
   )
 
 set(SYCL_INCLUDE_DIR "${SYCL_ROOT}/include/")
@@ -57,7 +58,7 @@ set(SYCL_FLAGS
   	"-stdlib=libstdc++"
         "-Wno-unknown-cuda-version")
       
-set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128" "-I../../local/include")
+set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128" "-I../../local/include" "-g")
 
 build_tests("${ONEAPI_UNIT_TESTS_BASE}")
 add_to_test("${ONEAPI_UNIT_TESTS_BASE}")
