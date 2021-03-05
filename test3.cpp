@@ -35,6 +35,7 @@ struct Scoring {
 };
 
 // kernel function that does transportation
+// queues[2]->size(), block, state, queues[2], item_ct1)
 
 void transport(int n, adept::BlockData<MyTrack> *block, oneapi::mkl::rng::device::philox4x32x10<1> *states,
                Queue_t *queues, sycl::nd_item<1> item_ct1)
@@ -49,6 +50,7 @@ void transport(int n, adept::BlockData<MyTrack> *block, oneapi::mkl::rng::device
   }
 }
 
+// block, scor, state, queues, item_ct1
 void select_process(adept::BlockData<MyTrack> *block, Scoring *scor, oneapi::mkl::rng::device::philox4x32x10<1> *states,
                     Queue_t *queues[], sycl::nd_item<1> item_ct1)
 {
@@ -90,7 +92,7 @@ void process_eloss(int n, adept::BlockData<MyTrack> *block, Scoring *scor,
 
     // energy loss
     float eloss = 0.2f * (*block)[particle].energy;
-    scor->totalEnergyLoss.fetch_add(eloss < 0.001f ? (*block)[particle].energy : eloss);
+    //scor->totalEnergyLoss.fetch_add(eloss < 0.001f ? (*block)[particle].energy : eloss);
 
     (*block)[particle].energy = (eloss < 0.001f ? 0.0f : ((*block)[particle].energy - eloss));
 
@@ -167,15 +169,22 @@ int main()
 
   constexpr int numberOfProcesses = 3;
 
-  Queue_t **queues = nullptr;
-  queues           = (Queue_t**) sycl::malloc_shared<Queue_t *>(numberOfProcesses, q_ct1);
+  Queue_t **queues = (Queue_t**) sycl::malloc_shared<Queue_t *>(numberOfProcesses, q_ct1);
+  char *buffer[numberOfProcesses];
 
+  size_t buffersize = Queue_t::SizeOfInstance(capacity);
   for (int i = 0; i < numberOfProcesses; i++) {
-    queues[i] = Queue_t::MakeInstance(capacity);
+    buffer[i] = (char*) sycl::malloc_shared(buffersize, q_ct1); 
+    queues[i] = Queue_t::MakeInstanceAt(capacity, buffer[i]);
   }
 
   // Allocate the content of Scoring in a buffer
-  Scoring *scor = new Scoring();
+  //Scoring *scor = new Scoring();
+  char *buffer2 = (char*) sycl::malloc_shared(sizeof(Scoring), q_ct1);
+
+  Scoring *scor = (Scoring*) Scoring::MakeInstanceAt(buffer2);
+
+
 
   // Initialize scoring
   scor->secondaries = 0;
@@ -187,7 +196,11 @@ int main()
 
   using Block_t    = adept::BlockData<MyTrack>;
 
-  auto block = Block_t::MakeInstance(capacity);
+  size_t blocksize = Block_t::SizeOfInstance(capacity);
+  char *buffer3 = (char*) sycl::malloc_shared(blocksize, q_ct1);
+  auto block = Block_t::MakeInstanceAt(capacity, buffer3);
+
+  // auto block = Block_t::MakeInstance(capacity);
   
   // initializing one track in the block
   auto track    = block->NextElement();
@@ -201,8 +214,8 @@ int main()
 
   q_ct1.wait_and_throw();
 
-  const sycl::range nthreads(32);
-  const sycl::range maxBlocks(10);
+  const sycl::range nthreads(1);
+  const sycl::range maxBlocks(1);
 
   sycl::range numBlocks(1), numBlocks_eloss(1), numBlocks_pairprod(1), numBlocks_transport(1);
   
@@ -216,17 +229,17 @@ int main()
 
     q_ct1.submit([&](sycl::handler &cgh) {
 	 cgh.parallel_for(sycl::nd_range<1>(numBlocks_transport * nthreads, nthreads), [=](sycl::nd_item<1> item_ct1) {
-//             transport(queues[2]->size(), block, state, queues[2], item_ct1);
+             transport(queues[2]->size(), block, state, queues[2], item_ct1);
          });
     });
 
     q_ct1.submit([&](sycl::handler &cgh) {
-	 cgh.parallel_for(sycl::nd_range<1>(numBlocks * nthreads, nthreads), [=](sycl::nd_item<1> item_ct1) {
-//     	      select_process(block, scor, state, queues, item_ct1);
-	  });
+      cgh.parallel_for(sycl::nd_range<1>(numBlocks * nthreads, nthreads), [=](sycl::nd_item<1> item_ct1) {
+                select_process(block, scor, state, queues, item_ct1);
+        });
     });
 
-    q_ct1.wait_and_throw();
+    q_ct1.wait_and_throw(); // tries to move data  host <-> device ?
 
     // call the process kernels
 
@@ -234,7 +247,7 @@ int main()
 
     q_ct1.submit([&](sycl::handler &cgh) {
        cgh.parallel_for(sycl::nd_range<1>(numBlocks_eloss * nthreads, nthreads), [=](sycl::nd_item<1> item_ct1) {
-//	   process_eloss(queues[0]->size(), block, scor, state, queues[0], item_ct1);
+	   process_eloss(queues[0]->size(), block, scor, state, queues[0], item_ct1);
        });
     });
    
@@ -242,7 +255,7 @@ int main()
 
     q_ct1.submit([&](sycl::handler &cgh) {
         cgh.parallel_for(sycl::nd_range<1>(numBlocks_pairprod * nthreads, nthreads), [=](sycl::nd_item<1> item_ct1) {
-//           process_pairprod(queues[1]->size(), block, scor, state, queues[1], item_ct1);
+           process_pairprod(queues[1]->size(), block, scor, state, queues[1], item_ct1);
         });
     });
 
