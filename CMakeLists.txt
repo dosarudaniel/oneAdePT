@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(porting-cuda-to-sycl LANGUAGES CXX)
 
 if (NOT SYCL_ROOT)
@@ -43,21 +43,22 @@ set(ONEAPI_UNIT_TESTS_BASE
   test7.cpp                    # converted (and modified) test_atomic.cu 
   test8.cpp                    # converted (and modified) test_atomic.cu using oneAtomic.h
   test9.cpp                    # converted and modified  test_track_block.cu
+  test10.cpp		       # conversion of cufisher_price_v2 .dp.cpp
   )
 
 set(SYCL_INCLUDE_DIR "${SYCL_ROOT}/include/")
 set(SYCL_LIB "${SYCL_ROOT}/lib/libsycl.so")
-set(CMAKE_C_COMPILER "${SYCL_ROOT}/bin/clang++")
-set(CMAKE_CXX_COMPILER "${SYCL_ROOT}/bin/clang++")
-set(SYCL_FLAGS
-  	"-fsycl"
-  	"-fsycl-targets=nvptx64-nvidia-cuda-sycldevice"
-  	"-fsycl-unnamed-lambda"
-  	"-std=c++20"
-  	"-stdlib=libstdc++"
-        "-Wno-unknown-cuda-version")
+set(CMAKE_C_COMPILER "${SYCL_ROOT}/bin/dpcpp")
+set(CMAKE_CXX_COMPILER "${SYCL_ROOT}/bin/dpcpp")
+#set(SYCL_FLAGS
+# 	"-fsycl"
+# 	"-fsycl-targets=spir64_gen-unknown-unknown-sycldevice"
+#	"-fsycl-unnamed-lambda"
+# 	"-std=c++20"
+# 	"-stdlib=libstdc++"
+#       "-Wno-unknown-cuda-version")
       
-set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128" "-I../../local/include" "-g")
+set(EXTRA_FLAGS "-I../base/inc" "-g")
 
 build_tests("${ONEAPI_UNIT_TESTS_BASE}")
 add_to_test("${ONEAPI_UNIT_TESTS_BASE}")
