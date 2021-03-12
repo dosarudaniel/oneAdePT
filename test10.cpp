@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <CL/sycl.hpp>
-#include <dpct/dpct.hpp>
+//#include <dpct/dpct.hpp>
 #include <iostream>
 #include <CopCore/Ranluxpp.h>
 #include <AdePT/SparseVector.h>
@@ -39,7 +39,7 @@ void fill_tracks(adept::SparseVectorInterface<Track_t> *vect1_ptr, int num_elem,
   if (tid >= num_elem) return;
   // parameters of next_free are passed to the matching constructor called in place
   Track_t *track = vect1_ptr->next_free(tid);
-  if (!track) COPCORE_EXCEPTION("Out of vector space");
+  // if (!track) COPCORE_EXCEPTION("Out of vector space");
 }
 
 void print_tracks(adept::SparseVectorInterface<Track_t> *tracks, int start, int num, const sycl::stream &stream_ct1)
@@ -99,8 +99,16 @@ void get_vector_data(const Vector_t *vect, Function vect_func, int *data)
 //____________________________________________________________________________________________________
 int main(void)
 {
-  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-  sycl::queue &q_ct1        = dev_ct1.default_queue();
+
+  sycl::default_selector device_selector;
+
+  sycl::queue q_ct1(device_selector);
+  std::cout <<  "Running on "
+	    << q_ct1.get_device().get_info<cl::sycl::info::device::name>()
+	    << "\n";
+
+  // dpct::device_ext &dev_ct1 = dpct::get_current_device();
+  // sycl::queue &q_ct1        = dev_ct1.default_queue();
   constexpr int VectorSize = 1 << 20;
   int ntracks              = 1000000;
   using Vector_t = adept::SparseVector<Track_t, VectorSize>; // 1<<16 is the default vector size if parameter omitted
@@ -161,7 +169,8 @@ int main(void)
   /*
   DPCT1003:11: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   */
-  COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  //COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  q_ct1.wait_and_throw();
   timer.Start();
   q_ct1.submit([&](sycl::handler &cgh) {
     cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, (ntracks + 127) / 128) * sycl::range<3>(1, 1, 128),
@@ -184,7 +193,9 @@ int main(void)
   /*
   DPCT1003:12: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   */
-  COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  //COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  q_ct1.wait_and_throw();
+
   auto time_fill = timer.Stop();
   std::cout << "time_construct_and_share = " << time_fill << std::endl;
   q_ct1.submit([&](sycl::handler &cgh) {
@@ -215,14 +226,18 @@ int main(void)
   /*
   DPCT1003:13: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   */
-  COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  //COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  q_ct1.wait_and_throw();
+
   timer.Start();
   auto select_func = [] (int i, const VectorInterface *arr) { return ((*arr)[i].energy < 0.2); };
   VectorInterface::select(vect1_ptr_d, select_func, sel_vector_d, nselected_hd);
   /*
   DPCT1003:14: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   */
-  COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  //COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  q_ct1.wait_and_throw();
+
   auto time_select = timer.Stop();
   int nselected1   = *nselected_hd;
   std::cout << "\ntime_select for " << nselected1 << " tracks with (energy < 0.2) = " << time_select << std::endl;
@@ -251,7 +266,9 @@ int main(void)
   /*
   DPCT1003:15: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   */
-  COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  //COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  q_ct1.wait_and_throw();
+
   timer.Start();
   VectorInterface::release_selected(vect1_ptr_d, sel_vector_d, nselected_hd);
   q_ct1.submit([&](sycl::handler &cgh) {
@@ -268,7 +285,9 @@ int main(void)
   /*
   DPCT1003:16: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   */
-  COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  //COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  q_ct1.wait_and_throw();
+
   auto time_release = timer.Stop();
   std::cout << "\ntime_release_selected = " << time_release << "   nused = " << *nused << std::endl;
   q_ct1.submit([&](sycl::handler &cgh) {
@@ -297,7 +316,9 @@ int main(void)
   /*
   DPCT1003:17: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   */
-  COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  //COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  q_ct1.wait_and_throw();
+
   timer.Start();
   // a fuction selecting tracks having energy > 0.8. We move these tracks in a second vector
   auto select2_func = [] (int i, const VectorInterface *arr) { return ((*arr)[i].energy > 0.8); };
@@ -308,7 +329,9 @@ int main(void)
   /*
   DPCT1003:18: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   */
-  COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  //COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  q_ct1.wait_and_throw();
+
   q_ct1.submit([&](sycl::handler &cgh) {
     auto nused_ct2 = &nused[0];
 
@@ -338,7 +361,9 @@ int main(void)
   /*
   DPCT1003:19: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   */
-  COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  //COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  q_ct1.wait_and_throw();
+
   std::cout << "\ntime_select_and_move (energy > 0.8) = " << time_select_and_move << std::endl;
   q_ct1.submit([&](sycl::handler &cgh) {
     sycl::stream stream_ct1(64 * 1024, 80, cgh);
@@ -384,13 +409,17 @@ int main(void)
   /*
   DPCT1003:20: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   */
-  COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  //COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  q_ct1.wait_and_throw();
+
   timer.Start();
   VectorInterface::select_used(vect1_ptr_d, sel_vector_d, nselected_hd);
   /*
   DPCT1003:21: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   */
-  COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  //COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  q_ct1.wait_and_throw();
+
   auto time_select_used = timer.Stop();
   std::cout << "\ntime_select_used = " << time_select_used << std::endl;
   q_ct1.submit([&](sycl::handler &cgh) {
@@ -412,13 +441,17 @@ int main(void)
   /*
   DPCT1003:22: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   */
-  COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  //COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  q_ct1.wait_and_throw();
+
   timer.Start();
   VectorInterface::compact(vect1_ptr_d, vect2_ptr_d, nselected_hd);
   /*
   DPCT1003:23: Migrated API does not return error code. (*, 0) is inserted. You may need to rewrite this code.
   */
-  COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  //COPCORE_CUDA_CHECK((dev_ct1.queues_wait_and_throw(), 0));
+  q_ct1.wait_and_throw();
+  
   auto time_compact = timer.Stop();
   q_ct1.submit([&](sycl::handler &cgh) {
     auto nused_ct2 = &nused[0];
