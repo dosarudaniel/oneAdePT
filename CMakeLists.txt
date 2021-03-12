@@ -43,6 +43,7 @@ set(ONEAPI_UNIT_TESTS_BASE
   test7.cpp                    # converted (and modified) test_atomic.cu 
   test8.cpp                    # converted (and modified) test_atomic.cu using oneAtomic.h
   test9.cpp                    # converted and modified  test_track_block.cu
+  test10.cpp		       # converted test_sparsevector.cu
   )
 
 set(SYCL_INCLUDE_DIR "${SYCL_ROOT}/include/")
