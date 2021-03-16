@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <CL/sycl.hpp>
-#include <dpct/dpct.hpp>
 #include <oneapi/mkl.hpp>
 #include <oneapi/mkl/rng/device.hpp>
 #include <iostream>
@@ -10,6 +9,7 @@
 #include <AdePT/1/BlockData.h>
 
 using Queue_t = adept::mpmc_bounded_queue<int>;
+using Rnd_t = oneapi::mkl::rng::device::philox4x32x10<1>;
 
 struct MyTrack {
   int index{0};
@@ -36,12 +36,13 @@ struct Scoring {
 
 // kernel function that does transportation
 
-void transport(int n, adept::BlockData<MyTrack> *block, oneapi::mkl::rng::device::philox4x32x10<1> *states,
+void transport(int n, adept::BlockData<MyTrack> *block, Rnd_t *states,
                Queue_t *queues, sycl::nd_item<1> item_ct1)
 {
   for (int particle = item_ct1.get_group(0) * item_ct1.get_local_range().get(0) + item_ct1.get_local_id(0);
            particle < n;
            particle += item_ct1.get_local_range().get(0) * item_ct1.get_group_range(0)) {
+
     // transport particles
     for (int xyz = 0; xyz < 3; xyz++) {
       (*block)[particle].pos[xyz] = (*block)[particle].pos[xyz] + (*block)[particle].energy * (*block)[particle].dir[xyz];
@@ -49,21 +50,23 @@ void transport(int n, adept::BlockData<MyTrack> *block, oneapi::mkl::rng::device
   }
 }
 
-void select_process(adept::BlockData<MyTrack> *block, Scoring *scor, oneapi::mkl::rng::device::philox4x32x10<1> *states,
+void select_process(int n, adept::BlockData<MyTrack> *block, Scoring *scor, Rnd_t *states,
                     Queue_t *queues[], sycl::nd_item<1> item_ct1)
 {
-  oneapi::mkl::rng::device::uniform<float> distr_ct1;
-
+  oneapi::mkl::rng::device::uniform<> distr;
+   
   int particle = item_ct1.get_group(0) * item_ct1.get_local_range().get(0) + item_ct1.get_local_id(0);
+ 
+  //if (particle >= n) return;
 
   // check if you are not outside the used block
   if (particle > block->GetNused() + block->GetNholes()) return;
 
   // check if the particle is still alive (E>0)
   if ((*block)[particle].energy == 0) return;
-
+ 
   // generate random number
-  float r = oneapi::mkl::rng::device::generate(distr_ct1, *states);
+  float r = oneapi::mkl::rng::device::generate(distr, states[particle]);
 
   if (r > 0.5f) {
       queues[0]->enqueue(particle);
@@ -75,43 +78,44 @@ void select_process(adept::BlockData<MyTrack> *block, Scoring *scor, oneapi::mkl
 // kernel function that does energy loss
 
 void process_eloss(int n, adept::BlockData<MyTrack> *block, Scoring *scor,
-                   oneapi::mkl::rng::device::philox4x32x10<1> *states, Queue_t *queue, sycl::nd_item<1> item_ct1)
+                   Rnd_t *states, Queue_t *queue, sycl::nd_item<1> item_ct1)
 {
+
   for (int particle = item_ct1.get_group(0) * item_ct1.get_local_range().get(0) + item_ct1.get_local_id(0);
            particle < n;
            particle += item_ct1.get_local_range().get(0) * item_ct1.get_group_range(0)) {
-
+  
     if (!queue->dequeue(particle)) return;
 
     // check if the particle is still alive (E>0)
-    if ((*block)[particle].energy == 0) return;
+    if ((*block)[particle].energy == 0.0f ) return;
 
     // call the 'process'
-
     // energy loss
+    
     float eloss = 0.2f * (*block)[particle].energy;
     scor->totalEnergyLoss.fetch_add(eloss < 0.001f ? (*block)[particle].energy : eloss);
 
     (*block)[particle].energy = (eloss < 0.001f ? 0.0f : ((*block)[particle].energy - eloss));
 
     // if particle dies (E=0) release the slot
-    if ((*block)[particle].energy < 0.001f) block->ReleaseElement(particle);
+    if ((*block)[particle].energy == 0.0f ) block->ReleaseElement(particle);
+
   }
 }
 
 // kernel function that does pair production
 
 void process_pairprod(int n, adept::BlockData<MyTrack> *block, Scoring *scor,
-                      oneapi::mkl::rng::device::philox4x32x10<1> *states, Queue_t *queue, sycl::nd_item<1> item_ct1)
+                      Rnd_t *states, Queue_t *queue, sycl::nd_item<1> item_ct1)
 {
-  for (int particle = item_ct1.get_group(0) * item_ct1.get_local_range().get(0) + item_ct1.get_local_id(0);
-           particle < n;
-           particle += item_ct1.get_local_range().get(0) * item_ct1.get_group_range(0)) {
+  
+    int particle = item_ct1.get_group(0) * item_ct1.get_local_range().get(0) + item_ct1.get_local_id(0);
 
     if (!queue->dequeue(particle)) return;
 
     // check if the particle is still alive (E>0)
-    if ((*block)[particle].energy < 0.0001f) return;
+    if ((*block)[particle].energy < 0.0001f ) return;
 
     // pair production
     auto secondary_track = block->NextElement();
@@ -125,21 +129,21 @@ void process_pairprod(int n, adept::BlockData<MyTrack> *block, Scoring *scor,
     // increase the counter of secondaries
     scor->secondaries.fetch_add(1);
 
-  }
 }
 
 /* this GPU kernel function is used to initialize the random states */
-
-void init(oneapi::mkl::rng::device::philox4x32x10<1> *states)
+void init(int seed, Rnd_t *states,sycl::item<1> item )
 {
-  /* we have to initialize the state */
-  *states = oneapi::mkl::rng::device::philox4x32x10<1>(0, {0, 0 * 8});
-}
-
+  // we have to initialize the state
+  int id =  item.get_id(0);
+  //Rnd_t engine(seed, id );
+  Rnd_t engine(seed);
+  oneapi::mkl::rng::device::skip_ahead(engine, id);
+  states[id] = engine;
+} 
 
 int main()
-{
-  
+{ 
   sycl::default_selector device_selector;
 
   sycl::queue q_ct1(device_selector);
@@ -147,35 +151,39 @@ int main()
 	    << q_ct1.get_device().get_info<cl::sycl::info::device::name>()
 	    << "\n";
 
-  oneapi::mkl::rng::device::philox4x32x10<1> *state;
+  const int seed = 1;
+  
+  const sycl::range nthreads(32);
+  const sycl::range maxBlocks(10);
 
-  state = sycl::malloc_device<oneapi::mkl::rng::device::philox4x32x10<1>>(1, q_ct1);
- 
-  q_ct1.submit([&](sycl::handler &cgh) {
-      cgh.parallel_for(sycl::nd_range(sycl::range(1), sycl::range(1)),
- 	           [=](sycl::nd_item<> item_ct1) {
-		       init(state);
-       });
-   });
-
-  q_ct1.wait_and_throw();
-
-  // Capacity of the different containers
+ // Capacity of the different containers
   constexpr int capacity = 1 << 20;
-
-  using Queue_t = adept::mpmc_bounded_queue<int>;
-
   constexpr int numberOfProcesses = 3;
 
-  Queue_t **queues = nullptr;
-  queues           = (Queue_t**) sycl::malloc_shared<Queue_t *>(numberOfProcesses, q_ct1);
+  using Rnd_t = oneapi::mkl::rng::device::philox4x32x10<1>;
+  Rnd_t* states = (Rnd_t*) sycl::malloc_device(sizeof(Rnd_t)*capacity, q_ct1);
 
+  q_ct1.submit([&](sycl::handler &cgh) {
+      cgh.parallel_for(sycl::range<1>(capacity),
+ 	           [=](sycl::item<> item) {
+             init(seed,states,item);
+       });
+   }).wait();
+
+ 
+  using Queue_t = adept::mpmc_bounded_queue<int>;  
+  Queue_t **queues  = sycl::malloc_shared<Queue_t *>(numberOfProcesses, q_ct1);
+  size_t buffersize = Queue_t::SizeOfInstance(capacity);
+  char *buffer;
   for (int i = 0; i < numberOfProcesses; i++) {
-    queues[i] = Queue_t::MakeInstance(capacity);
+    buffer = (char *)sycl::malloc_shared(buffersize, q_ct1);
+    queues[i] = Queue_t::MakeInstanceAt(capacity, buffer);
   }
-
+  
+  
   // Allocate the content of Scoring in a buffer
-  Scoring *scor = new Scoring();
+  char *sbuffer = (char *)sycl::malloc_shared(sizeof(Scoring), q_ct1);
+  Scoring *scor = Scoring::MakeInstanceAt(sbuffer);
 
   // Initialize scoring
   scor->secondaries = 0;
@@ -187,7 +195,9 @@ int main()
 
   using Block_t    = adept::BlockData<MyTrack>;
 
-  auto block = Block_t::MakeInstance(capacity);
+  size_t blocksize = Block_t::SizeOfInstance(capacity);
+  char *bbuffer    = (char *)sycl::malloc_shared(blocksize, q_ct1);
+  auto block = Block_t::MakeInstanceAt(capacity, bbuffer);
   
   // initializing one track in the block
   auto track    = block->NextElement();
@@ -201,12 +211,9 @@ int main()
 
   q_ct1.wait_and_throw();
 
-  const sycl::range nthreads(32);
-  const sycl::range maxBlocks(10);
-
   sycl::range numBlocks(1), numBlocks_eloss(1), numBlocks_pairprod(1), numBlocks_transport(1);
   
-  while (block->GetNused()) {
+  while (block->GetNused()>0) {
 
     numBlocks = (block->GetNused() + block->GetNholes() + nthreads - 1) / nthreads;
 
@@ -215,36 +222,36 @@ int main()
     numBlocks_transport = std::min(numBlocks[0], maxBlocks[0]);
 
     q_ct1.submit([&](sycl::handler &cgh) {
-	 cgh.parallel_for(sycl::nd_range<1>(numBlocks_transport * nthreads, nthreads), [=](sycl::nd_item<1> item_ct1) {
-//             transport(queues[2]->size(), block, state, queues[2], item_ct1);
+	      cgh.parallel_for(sycl::nd_range<1>(numBlocks_transport * nthreads, nthreads), [=](sycl::nd_item<1> item_ct1) {
+             transport(queues[2]->size(), block, states, queues[2], item_ct1);
          });
     });
-
+    
     q_ct1.submit([&](sycl::handler &cgh) {
-	 cgh.parallel_for(sycl::nd_range<1>(numBlocks * nthreads, nthreads), [=](sycl::nd_item<1> item_ct1) {
-//     	      select_process(block, scor, state, queues, item_ct1);
-	  });
-    });
-
-    q_ct1.wait_and_throw();
+	       cgh.parallel_for(sycl::nd_range<1>(numBlocks * nthreads, nthreads), [=](sycl::nd_item<1> item_ct1) {
+     	      select_process(numBlocks.get(0) * nthreads.get(0), block, scor, states, queues, item_ct1);
+	    });
+    });//.wait();
 
     // call the process kernels
+   
+   q_ct1.wait_and_throw();
 
-    numBlocks_eloss    = std::min((queues[0]->size() + nthreads[0] - 1) / nthreads[0], maxBlocks[0]);
+    numBlocks_eloss    = std::min((queues[0]->size() + nthreads[0] - 1) / nthreads[0] + 1, maxBlocks[0]);
 
     q_ct1.submit([&](sycl::handler &cgh) {
        cgh.parallel_for(sycl::nd_range<1>(numBlocks_eloss * nthreads, nthreads), [=](sycl::nd_item<1> item_ct1) {
-//	   process_eloss(queues[0]->size(), block, scor, state, queues[0], item_ct1);
+      	   process_eloss(queues[0]->size(), block, scor, states, queues[0], item_ct1);
        });
-    });
-   
-    numBlocks_pairprod = std::min((queues[1]->size() + nthreads[0] - 1) / nthreads[0], maxBlocks[0]);
+    });//.wait();
+    
+    numBlocks_pairprod = std::min((queues[1]->size() + nthreads[0] - 1) / nthreads[0] + 1, maxBlocks[0]);
 
     q_ct1.submit([&](sycl::handler &cgh) {
         cgh.parallel_for(sycl::nd_range<1>(numBlocks_pairprod * nthreads, nthreads), [=](sycl::nd_item<1> item_ct1) {
-//           process_pairprod(queues[1]->size(), block, scor, state, queues[1], item_ct1);
+           process_pairprod(queues[1]->size(), block, scor, states, queues[1], item_ct1);
         });
-    });
+    });//.wait();
 
     // Wait for GPU to finish before accessing on host
     q_ct1.wait_and_throw();
