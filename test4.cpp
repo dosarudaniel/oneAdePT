@@ -7,12 +7,12 @@
 #include <AdePT/1/BlockData.h>
 
 using Queue_t = adept::mpmc_bounded_queue<int>;
-/*
+
 void select_process(Queue_t *queues[], sycl::nd_item<3> item_ct1)
 {
   queues[0]->enqueue(0);
 }
-*/
+
 
 int main()
 {
@@ -42,11 +42,5 @@ int main()
     queues[i]  = Queue_t::MakeInstanceAt(capacity, buffer);  // It crashes here
   }
 
-
-  // allocate all objects at their aligned positions in the buffer
-
-
-    
-  
   return 0;
 }

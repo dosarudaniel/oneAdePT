@@ -43,6 +43,7 @@ set(ONEAPI_UNIT_TESTS_BASE
   test7.cpp                    # converted (and modified) test_atomic.cu 
   test8.cpp                    # converted (and modified) test_atomic.cu using oneAtomic.h
   test9.cpp                    # converted and modified  test_track_block.cu
+  test10.cpp                   # 
   )
 
 set(SYCL_INCLUDE_DIR "${SYCL_ROOT}/include/")
@@ -58,6 +59,10 @@ set(SYCL_FLAGS
         "-Wno-unknown-cuda-version")
       
 set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128" "-I../../local/include")
+
+if (EXISTS ${CMAKE_SOURCE_DIR}/extra)
+  include(${CMAKE_SOURCE_DIR}/extra/extra.cmake)
+endif()
 
 build_tests("${ONEAPI_UNIT_TESTS_BASE}")
 add_to_test("${ONEAPI_UNIT_TESTS_BASE}")

@@ -6,7 +6,7 @@
 
 #include <CopCore/1/Global.h>
 
-#include "mulmod.h"
+#include <CopCore/1/mulmod.h>
 
 #include <cassert>
 #include <cstdint>
@@ -146,4 +146,4 @@ public:
   uint64_t IntRndm() { return this->NextRandomBits(); }
 };
 
-#endif // COPCORE_RANLUXPP_H_
+#endif // COPCORE_1RANLUXPP_H_

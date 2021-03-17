@@ -41,9 +41,12 @@
  * @author Andrei Gheata (andrei.gheata@cern.ch)
  */
 
-#ifndef ADEPT_SPARSEVECTOR_H_
-#define ADEPT_SPARSEVECTOR_H_
+#ifndef ADEPT_1SPARSEVECTOR_H_
+#define ADEPT_1SPARSEVECTOR_H_
 
+#include <CL/sycl.hpp>
+#include <dpct/dpct.hpp>
+#include <CL/cl_ext.h>
 #include <CopCore/1/CopCore.h>
 #include <AdePT/1/Atomic.h>
 
@@ -57,61 +60,73 @@ class SparseVector;
 
 namespace sa_detail {
 
-#ifdef COPCORE_CUDA_COMPILER
-
-__device__ inline int lane_id(void)
+inline int lane_id(sycl::nd_item<3> item_ct1)
 {
-  return threadIdx.x & 31;
+  return item_ct1.get_local_id(2) & 31;
 }
 
 template <typename Type>
-__device__ inline bool is_used(int index, const SparseVectorInterface<Type> *svector)
+inline bool is_used(int index, const SparseVectorInterface<Type> *svector)
 {
   return svector->is_used(index);
 }
 
-__device__ void print_mask(unsigned int mask)
+void print_mask(unsigned int mask, const sycl::stream &stream_ct1)
 {
   for (int lane = 0; lane < 32; ++lane) {
     if ((mask & (1 << lane)))
-      printf("1");
+      stream_ct1 << "1";
     else
-      printf("0");
+      stream_ct1 << "0";
   }
-  printf("\n");
+  stream_ct1 << "\n";
 }
 
 template <typename Type, unsigned N>
-__global__ void construct_vector(void *addr, int numSMs)
+void construct_vector(void *addr, int numSMs)
 {
   auto vect = new (addr) SparseVector<Type, N>(N);
   vect->setNumSMs(numSMs);
 }
 
 template <typename Type>
-__global__ void release_selected_kernel(SparseVectorInterface<Type> *svect, const unsigned int *selection,
-                                        unsigned *nselected)
+void release_selected_kernel(SparseVectorInterface<Type> *svect, const unsigned int *selection,
+                                        unsigned *nselected,
+                                        sycl::nd_item<3> item_ct1)
 {
   // Release the selected entries
-  for (auto tid = blockIdx.x * blockDim.x + threadIdx.x; tid < *nselected; tid += blockDim.x * gridDim.x)
+  for (auto tid = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
+                  item_ct1.get_local_id(2);
+       tid < *nselected;
+       tid += item_ct1.get_local_range().get(2) * item_ct1.get_group_range(2))
     svect->release(selection[tid]);
 }
 
 template <typename Type>
-__global__ void release_selected_kernel_launcher(SparseVectorInterface<Type> *svect, const unsigned int *selection,
-                                                 unsigned *nselected)
+void release_selected_kernel_launcher(SparseVectorInterface<Type> *svect, const unsigned int *selection,
+                                                 unsigned *nselected,
+                                                 sycl::nd_item<3> item_ct1)
 {
   // Launcher for releasing the selected entries
   constexpr unsigned int warpsPerSM = 32; // target occupancy
   constexpr unsigned int block_size = 256;
   unsigned int grid_size =
-      min(warpsPerSM * svect->getNumSMs() * 32 / block_size, (*nselected + block_size - 1) / block_size);
+      std::min(warpsPerSM * svect->getNumSMs() * 32 / block_size,
+               (*nselected + block_size - 1) / block_size);
   // printf("running release_selected_kernel<<<%d, %d>>>\n", grid_size, block_size);
-  sa_detail::release_selected_kernel<Type><<<grid_size, block_size>>>(svect, selection, nselected);
+    dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+        cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, grid_size) *
+                                               sycl::range<3>(1, 1, block_size),
+                                           sycl::range<3>(1, 1, block_size)),
+                         [=](sycl::nd_item<3> item_ct1) {
+                             release_selected_kernel<Type>(svect, selection,
+                                                           nselected, item_ct1);
+                         });
+    });
 }
 
 template <typename Type>
-__global__ void clear_kernel(SparseVectorInterface<Type> *svect)
+void clear_kernel(SparseVectorInterface<Type> *svect)
 {
   // Clear the vector
   svect->clear();
@@ -120,8 +135,8 @@ __global__ void clear_kernel(SparseVectorInterface<Type> *svect)
 /// Make a selection of elements according to the user predicate and write it to the output.
 /// Assume that IndexContainer::operator[] is implemented and use it to copy selected element indices
 template <typename Type, typename Predicate, typename IndexContainer>
-__global__ void select_kernel(const SparseVectorInterface<Type> *svect, Predicate pred_func, IndexContainer *output,
-                              unsigned *nselected)
+void select_kernel(const SparseVectorInterface<Type> *svect, Predicate pred_func, IndexContainer *output,
+                              unsigned *nselected, sycl::nd_item<3> item_ct1)
 
 {
   // Non-order-preserving stream compacting algorithm
@@ -130,11 +145,12 @@ __global__ void select_kernel(const SparseVectorInterface<Type> *svect, Predicat
   constexpr unsigned int warp_mask = 0xFFFFFFFF;
 
   int num_items = svect->size();
-  int tid       = blockIdx.x * blockDim.x + threadIdx.x;
+  int tid = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
+            item_ct1.get_local_id(2);
   int warp_id   = tid / 32;
   // exit if the current warp is out of range
   if (warp_id > num_items / 1024) return;
-  int lnid          = lane_id();
+  int lnid = lane_id(item_ct1);
   unsigned votes    = 0;
   unsigned predmask = 0;
   int cnt           = 0;
@@ -142,18 +158,21 @@ __global__ void select_kernel(const SparseVectorInterface<Type> *svect, Predicat
   // predicates for one element in the group and combine them into a `votes` word using __ballot. The number of
   // votes in subgroup `i` is stored into the variable cnt{i} (value for lane `i` of the warp). The votes
   // for subgroup `i` are stored in predmask{i}
-  int group_max = min(32, 1 + (num_items - 1024 * warp_id) / 32);
+  int group_max = sycl::min(32, (int)(1 + (num_items - 1024 * warp_id) / 32));
   for (int group_id = 0; group_id < group_max; ++group_id) {
     // Get votes for this group
     int index     = 1024 * warp_id + 32 * group_id + lnid;
     bool selected = (index < num_items) ? is_used(index, svect) && pred_func(index, svect) : false;
 
+    /*
+    DPCT1004:0: Could not generate replacement.
+    */
     votes = __ballot_sync(warp_mask, selected);
 
     // store the ballot and the votes count in the lane matching the group id
     if (lnid == group_id) {
       predmask = votes;
-      cnt      = __popc(votes); // number of votes (set bits) in the subgroup
+      cnt = sycl::popcount(votes); // number of votes (set bits) in the subgroup
       // printf("(warp_id=%d, group_id=%d) cnt = %d  predmask = 0x%x ", warp_id, lnid, cnt, predmask);
       // print_mask(predmask);
     }
@@ -162,7 +181,11 @@ __global__ void select_kernel(const SparseVectorInterface<Type> *svect, Predicat
 // Stage 2: parallel prefix sum of all cnt variables giving the offset for each subgroup
 #pragma unroll
   for (int i = 1; i < 32; i <<= 1) {
-    int n = __shfl_up_sync(warp_mask, cnt, i);
+    /*
+    DPCT1023:1: The DPC++ sub-group does not support mask options for
+    shuffle_up.
+    */
+    int n = item_ct1.get_sub_group().shuffle_up(cnt, i);
     if (lnid >= i) cnt += n;
   }
 
@@ -173,20 +196,40 @@ __global__ void select_kernel(const SparseVectorInterface<Type> *svect, Predicat
   int group_offset = 0;
   if (lnid == 31) {
     // printf("final count for warp %d: cnt = %d\n", warp_id, cnt);
-    group_offset = atomicAdd(nselected, cnt);
+    /*
+    DPCT1039:2: The generated code assumes that "nselected" points to the global
+    memory address space. If it points to a local memory address space, replace
+    "dpct::atomic_fetch_add" with "dpct::atomic_fetch_add<unsigned int,
+    sycl::access::address_space::local_space>".
+    */
+    group_offset =
+        sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(nselected))
+            .fetch_add(cnt);
     // printf("warp %d: group_offset = %d  all_votes = %d\n", warp_id, group_offset, *nselected);
   }
-  group_offset = __shfl_sync(warp_mask, group_offset, 31);
+  /*
+  DPCT1023:3: The DPC++ sub-group does not support mask options for shuffle.
+  */
+  group_offset = item_ct1.get_sub_group().shuffle(group_offset, 31);
 
   // Stage 4: Write the indices of the selected elements to the output vector
   for (int group_id = 0; group_id < group_max; ++group_id) {
-    int mask           = __shfl_sync(warp_mask, predmask, group_id); // broadcast mask stored by lane group_id
+    /*
+    DPCT1023:4: The DPC++ sub-group does not support mask options for shuffle.
+    */
+    int mask = item_ct1.get_sub_group().shuffle(
+        predmask, group_id); // broadcast mask stored by lane group_id
     int subgroup_index = 0;
     if (group_id > 0)
-      subgroup_index = __shfl_sync(warp_mask, cnt, group_id - 1); // broadcast from thr group_id - 1 if group_id > 0
+      /*
+      DPCT1023:5: The DPC++ sub-group does not support mask options for shuffle.
+      */
+      subgroup_index = item_ct1.get_sub_group().shuffle(
+          cnt, group_id - 1); // broadcast from thr group_id - 1 if group_id > 0
 
     if (mask & (1 << lnid)) { // each thr extracts its pred bit
-      int idest     = group_offset + subgroup_index + __popc(mask & ((1 << lnid) - 1));
+      int idest = group_offset + subgroup_index +
+                  sycl::popcount(mask & ((1 << lnid) - 1));
       int isrc      = 1024 * warp_id + 32 * group_id + lnid;
       output[idest] = isrc;
     }
@@ -195,23 +238,33 @@ __global__ void select_kernel(const SparseVectorInterface<Type> *svect, Predicat
 
 /// Dynamic launcher for select_kernel
 template <typename Type, typename Predicate, typename IndexContainer>
-__global__ void select_kernel_launcher(const SparseVectorInterface<Type> *svect, Predicate pred_func,
-                                       IndexContainer *output, unsigned *nselected)
+void select_kernel_launcher(const SparseVectorInterface<Type> *svect, Predicate pred_func,
+                                       IndexContainer *output, unsigned *nselected,
+                                       sycl::nd_item<3> item_ct1)
 {
   const int num_threads = 128;
   int num_items         = svect->size();
   int num_blocks        = (num_items + 4095) / 4096; // a warp processes groups of 1024 elements
   *nselected            = 0;
-  sa_detail::select_kernel<Type, Predicate, IndexContainer>
-      <<<num_blocks, num_threads>>>(svect, pred_func, output, nselected);
+    dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+        cgh.parallel_for(
+            sycl::nd_range<3>(sycl::range<3>(1, 1, num_blocks) *
+                                  sycl::range<3>(1, 1, num_threads),
+                              sycl::range<3>(1, 1, num_threads)),
+            [=](sycl::nd_item<3> item_ct1) {
+                select_kernel<Type, Predicate, IndexContainer>(
+                    svect, pred_func, output, nselected, item_ct1);
+            });
+    });
 }
 
 /// Make a selection of elements according to the user predicate and write it to the output.
 /// Copy directly elements at the end of the output vector.
 /// Similar to select_kernel, but having extra actions applied to the vectors
 template <typename Type, typename Predicate>
-__global__ void select_and_move_kernel(SparseVectorInterface<Type> *svect, Predicate pred_func,
-                                       SparseVectorInterface<Type> *output, unsigned *nselected, int dest_offset)
+void select_and_move_kernel(SparseVectorInterface<Type> *svect, Predicate pred_func,
+                                       SparseVectorInterface<Type> *output, unsigned *nselected, int dest_offset,
+                                       sycl::nd_item<3> item_ct1)
 
 {
   // Non-order-preserving stream compacting algorithm
@@ -221,11 +274,12 @@ __global__ void select_and_move_kernel(SparseVectorInterface<Type> *svect, Predi
 
   assert(output != svect && "Compacting into the same container not supported yet");
   int num_items = svect->size();
-  int tid       = blockIdx.x * blockDim.x + threadIdx.x;
+  int tid = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
+            item_ct1.get_local_id(2);
   int warp_id   = tid / 32;
   // exit if the current warp is out of range
   if (warp_id > num_items / 1024) return;
-  int lnid          = lane_id();
+  int lnid = lane_id(item_ct1);
   unsigned votes    = 0;
   unsigned predmask = 0;
   int cnt           = 0;
@@ -233,18 +287,21 @@ __global__ void select_and_move_kernel(SparseVectorInterface<Type> *svect, Predi
   // predicates for one element in the group and combine them into a `votes` word using __ballot. The number of
   // votes in subgroup `i` is stored into the variable cnt{i} (value for lane `i` of the warp). The votes
   // for subgroup `i` are stored in predmask{i}
-  int group_max = min(32, 1 + (num_items - 1024 * warp_id) / 32);
+  int group_max = sycl::min(32, (int)(1 + (num_items - 1024 * warp_id) / 32));
   for (int group_id = 0; group_id < group_max; ++group_id) {
     // Get votes for this group
     int index     = 1024 * warp_id + 32 * group_id + lnid;
     bool selected = (index < num_items) ? is_used(index, svect) && pred_func(index, svect) : false;
 
+    /*
+    DPCT1004:6: Could not generate replacement.
+    */
     votes = __ballot_sync(warp_mask, selected);
 
     // store the ballot and the votes count in the lane matching the group id
     if (lnid == group_id) {
       predmask = votes;
-      cnt      = __popc(votes); // number of votes (set bits) in the subgroup
+      cnt = sycl::popcount(votes); // number of votes (set bits) in the subgroup
       //  mask out the selected elements that will be released from the initial vector
       int indmask      = index / 32;
       unsigned newmask = svect->mask_at(indmask).load() & (~predmask);
@@ -257,7 +314,11 @@ __global__ void select_and_move_kernel(SparseVectorInterface<Type> *svect, Predi
 // Stage 2: parallel prefix sum of all cnt variables giving the offset for each subgroup
 #pragma unroll
   for (int i = 1; i < 32; i <<= 1) {
-    int n = __shfl_up_sync(warp_mask, cnt, i);
+    /*
+    DPCT1023:7: The DPC++ sub-group does not support mask options for
+    shuffle_up.
+    */
+    int n = item_ct1.get_sub_group().shuffle_up(cnt, i);
     if (lnid >= i) cnt += n;
   }
 
@@ -268,22 +329,43 @@ __global__ void select_and_move_kernel(SparseVectorInterface<Type> *svect, Predi
   int group_offset = 0;
   if (lnid == 31) {
     // printf("final count for warp %d: cnt = %d\n", warp_id, cnt);
-    group_offset = atomicAdd(nselected, cnt);
+    /*
+    DPCT1039:8: The generated code assumes that "nselected" points to the global
+    memory address space. If it points to a local memory address space, replace
+    "dpct::atomic_fetch_add" with "dpct::atomic_fetch_add<unsigned int,
+    sycl::access::address_space::local_space>".
+    */
+    group_offset =
+        sycl::atomic<unsigned int>(sycl::global_ptr<unsigned int>(nselected))
+            .fetch_add(cnt);
     output->add_elements(cnt);   // increase the counter in the output vector and set masks
     svect->remove_elements(cnt); // remove used elements from the source
     // printf("warp %d: group_offset = %d  all_votes = %d\n", warp_id, group_offset, *nselected);
   }
-  group_offset = __shfl_sync(warp_mask, group_offset, 31);
+  /*
+  DPCT1023:9: The DPC++ sub-group does not support mask options for shuffle.
+  */
+  group_offset = item_ct1.get_sub_group().shuffle(group_offset, 31);
 
   // Stage 4: Write the indices of the selected elements to the output vect
   for (int group_id = 0; group_id < group_max; ++group_id) {
-    int mask           = __shfl_sync(warp_mask, predmask, group_id); // broadcast mask stored by lane group_id
+    /*
+    DPCT1023:10: The DPC++ sub-group does not support mask options for shuffle.
+    */
+    int mask = item_ct1.get_sub_group().shuffle(
+        predmask, group_id); // broadcast mask stored by lane group_id
     int subgroup_index = 0;
     if (group_id > 0)
-      subgroup_index = __shfl_sync(warp_mask, cnt, group_id - 1); // broadcast from thr group_id - 1 if group_id > 0
+      /*
+      DPCT1023:11: The DPC++ sub-group does not support mask options for
+      shuffle.
+      */
+      subgroup_index = item_ct1.get_sub_group().shuffle(
+          cnt, group_id - 1); // broadcast from thr group_id - 1 if group_id > 0
 
     if (mask & (1 << lnid)) { // each thr extracts its pred bit
-      int idest = dest_offset + group_offset + subgroup_index + __popc(mask & ((1 << lnid) - 1));
+      int idest = dest_offset + group_offset + subgroup_index +
+                  sycl::popcount(mask & ((1 << lnid) - 1));
       int isrc  = 1024 * warp_id + 32 * group_id + lnid;
       // printf("== copy from %d to %d\n", isrc, idest);
       new (output->data() + idest) Type((*svect)[isrc]); // call in-place copy constructor starting with last element
@@ -293,19 +375,30 @@ __global__ void select_and_move_kernel(SparseVectorInterface<Type> *svect, Predi
 
 /// Dynamic launcher for select_kernel
 template <typename Type, typename Predicate>
-__global__ void select_and_move_kernel_launcher(SparseVectorInterface<Type> *svect, Predicate pred_func,
-                                                SparseVectorInterface<Type> *output, unsigned *nselected)
+void select_and_move_kernel_launcher(SparseVectorInterface<Type> *svect, Predicate pred_func,
+                                                SparseVectorInterface<Type> *output, unsigned *nselected,
+                                                sycl::nd_item<3> item_ct1)
 {
   using Vector_t            = SparseVectorInterface<Type>;
   const int num_items       = svect->size();
   constexpr int num_threads = 128;
   const int num_blocks      = (num_items + 4095) / 4096;
   *nselected                = 0;
-  sa_detail::select_and_move_kernel<Type>
-      <<<num_blocks, num_threads>>>(svect, pred_func, output, nselected, output->size());
+    dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+        auto output_size_ct4 = output->size();
+
+        cgh.parallel_for(
+            sycl::nd_range<3>(sycl::range<3>(1, 1, num_blocks) *
+                                  sycl::range<3>(1, 1, num_threads),
+                              sycl::range<3>(1, 1, num_threads)),
+            [=](sycl::nd_item<3> item_ct1) {
+                select_and_move_kernel<Type>(svect, pred_func, output,
+                                             nselected, output_size_ct4,
+                                             item_ct1);
+            });
+    });
 }
 
-#endif // COPCORE_CUDA_COMPILER
 } // end namespace sa_detail
 
 /** @brief SparseVector interface */
@@ -326,7 +419,7 @@ class SparseVectorInterface {
   using Mask_t                 = unsigned int;
   using AtomicInt_t            = adept::Atomic_t<int>;
   using AtomicMask_t           = adept::Atomic_t<Mask_t>;
-  using LaunchGrid_t           = copcore::launch_grid<copcore::BackendType::CUDA>;
+  using LaunchGrid_t           = copcore::launch_grid<copcore::BackendType::ONEAPI>;
 
 protected:
   void *fBegin     = nullptr; ///< Start address of the vector data
@@ -338,21 +431,21 @@ protected:
   unsigned fMaskCapacity{0};  ///< Capacity of the mask vector
   int fNumSMs{0};             ///< number of streaming multi-processors
 
-  __host__ __device__ SparseVectorInterface() = delete;
+  SparseVectorInterface() = delete;
 
-  __host__ __device__ SparseVectorInterface(size_t totalCapacity)
+  SparseVectorInterface(size_t totalCapacity)
       : fCapacity(totalCapacity), fMaskCapacity(totalCapacity / 32)
   {
   }
 
-  __host__ __device__ SparseVectorInterface(const SparseVectorInterface &other) = delete;
+  SparseVectorInterface(const SparseVectorInterface &other) = delete;
 
-  __host__ __device__ const SparseVectorInterface &operator=(const SparseVectorInterface &other) = delete;
+  const SparseVectorInterface &operator=(const SparseVectorInterface &other) = delete;
 
-  __host__ __device__ void setNumSMs(int numSMs) { fNumSMs = numSMs; }
+  void setNumSMs(int numSMs) { fNumSMs = numSMs; }
 
   /** @brief Set the bit mask for element i */
-  __host__ __device__ __forceinline__ void set_bit(Index_t i)
+  __dpct_inline__ void set_bit(Index_t i)
   {
     Index_t indmask = i / 32;
     Mask_t contrib  = 1 << (i & 31);
@@ -363,7 +456,7 @@ protected:
   }
 
   /** @brief Reset the bit mask for element i */
-  __host__ __device__ __forceinline__ void reset_bit(Index_t i)
+  __dpct_inline__ void reset_bit(Index_t i)
   {
     Index_t indmask = i / 32;
     Mask_t contrib  = ~(1 << (i & 31));
@@ -375,103 +468,113 @@ protected:
 
 public:
   /** @brief Maximum number of elements */
-  __host__ __device__ __forceinline__ constexpr size_t capacity() const { return fCapacity; }
+  __dpct_inline__ constexpr size_t capacity() const { return fCapacity; }
 
   /** @brief Number of shared elements (watermark for elements given away) */
-  __host__ __device__ __forceinline__ size_t size() const { return fNshared.load(); }
+  __dpct_inline__ size_t size() const { return fNshared.load(); }
 
   /** @brief Number of elements still in use */
-  __host__ __device__ __forceinline__ size_t size_used() const { return fNused.load(); }
+  __dpct_inline__ size_t size_used() const { return fNused.load(); }
 
   /** @brief Number of elements booked. Can only exceed the shared size when the vector is full */
-  __host__ __device__ __forceinline__ size_t size_booked() const { return fNbooked.load(); }
+  __dpct_inline__ size_t size_booked() const { return fNbooked.load(); }
 
   /** @brief Is container empty */
-  __host__ __device__ __forceinline__ bool empty() const { return !size(); }
+  __dpct_inline__ bool empty() const { return !size(); }
 
   /** @brief Get number of SMs on the current card (TODO: to be moved to common copcoreutils) */
-  __host__ __device__ int getNumSMs() const { return fNumSMs; }
+  int getNumSMs() const { return fNumSMs; }
 
   /// Forward iterator methods. Note: it iterates through holes as well.
-  __host__ __device__ __forceinline__ iterator begin() { return (iterator)this->fBegin; }
-  __host__ __device__ __forceinline__ const_iterator begin() const { return (const_iterator)this->fBegin; }
-  __host__ __device__ __forceinline__ iterator end() { return begin() + size(); }
-  __host__ __device__ __forceinline__ const_iterator end() const { return begin() + size(); }
+  __dpct_inline__ iterator begin() { return (iterator)this->fBegin; }
+  __dpct_inline__ const_iterator begin() const {
+    return (const_iterator)this->fBegin;
+  }
+  __dpct_inline__ iterator end() { return begin() + size(); }
+  __dpct_inline__ const_iterator end() const { return begin() + size(); }
 
   /// Backward iterator methods. Note: it iterates through holes as well.
-  __host__ __device__ __forceinline__ iterator rbegin() { return (iterator)this->fBegin; }
-  __host__ __device__ __forceinline__ const_iterator rbegin() const { return (const_iterator)this->fBegin; }
-  __host__ __device__ __forceinline__ iterator rend() { return begin() + size(); }
-  __host__ __device__ __forceinline__ const_iterator rend() const { return begin() + size(); }
+  __dpct_inline__ iterator rbegin() { return (iterator)this->fBegin; }
+  __dpct_inline__ const_iterator rbegin() const {
+    return (const_iterator)this->fBegin;
+  }
+  __dpct_inline__ iterator rend() { return begin() + size(); }
+  __dpct_inline__ const_iterator rend() const { return begin() + size(); }
 
   /// Mask vector accessors
-  __host__ __device__ __forceinline__ AtomicMask_t *mask_begin() { return (AtomicMask_t *)this->fMaskBegin; }
-  __host__ __device__ __forceinline__ const AtomicMask_t *mask_begin() const
+  __dpct_inline__ AtomicMask_t *mask_begin() {
+    return (AtomicMask_t *)this->fMaskBegin;
+  }
+  __dpct_inline__ const AtomicMask_t *mask_begin() const
   {
     return (const AtomicMask_t *)this->fMaskBegin;
   }
-  __host__ __device__ __forceinline__ AtomicMask_t &mask_at(size_t i) { return mask_begin()[i]; }
-  __host__ __device__ __forceinline__ const AtomicMask_t &mask_at(size_t i) const { return mask_begin()[i]; }
+  __dpct_inline__ AtomicMask_t &mask_at(size_t i) { return mask_begin()[i]; }
+  __dpct_inline__ const AtomicMask_t &mask_at(size_t i) const {
+    return mask_begin()[i];
+  }
 
   /// Return a pointer to the vector's buffer, even if empty().
-  __host__ __device__ __forceinline__ pointer data() { return pointer(begin()); }
+  __dpct_inline__ pointer data() { return pointer(begin()); }
   /// Return a pointer to the vector's buffer, even if empty().
-  __host__ __device__ __forceinline__ const_pointer data() const { return const_pointer(begin()); }
+  __dpct_inline__ const_pointer data() const { return const_pointer(begin()); }
 
   /// Element accessors
-  __host__ __device__ __forceinline__ reference operator[](size_t idx)
+  __dpct_inline__ reference operator[](size_t idx)
   {
     assert(idx < size());
     return begin()[idx];
   }
 
-  __host__ __device__ __forceinline__ const_reference operator[](size_t idx) const
+  __dpct_inline__ const_reference operator[](size_t idx) const
   {
     assert(idx < size());
     return begin()[idx];
   }
 
-  __host__ __device__ __forceinline__ reference front()
+  __dpct_inline__ reference front()
   {
     assert(!empty());
     return begin()[0];
   }
 
-  __host__ __device__ __forceinline__ const_reference front() const
+  __dpct_inline__ const_reference front() const
   {
     assert(!empty());
     return begin()[0];
   }
 
-  __host__ __device__ __forceinline__ reference back()
+  __dpct_inline__ reference back()
   {
     assert(!empty());
     return end()[-1];
   }
 
-  __host__ __device__ __forceinline__ const_reference back() const
+  __dpct_inline__ const_reference back() const
   {
     assert(!empty());
     return end()[-1];
   }
 
   /** @brief Sparsity defined as 1 - nused/nshared (0 means no hole)*/
-  __host__ __device__ __forceinline__ float get_sparsity() const
+  __dpct_inline__ float get_sparsity() const
   {
     return (size()) ? 1. - (float)size_used() / size() : 0.;
   }
 
   /** @brief Shared fraction defined as nshared/nmax (0 means empty, 1 means full)*/
-  __host__ __device__ __forceinline__ float get_shared_fraction() const { return (float)size() / capacity(); }
+  __dpct_inline__ float get_shared_fraction() const {
+    return (float)size() / capacity();
+  }
 
   /** @brief Selected fraction defined as nselected/nused*/
-  __host__ __device__ __forceinline__ float get_selected_fraction(size_t nselected) const
+  __dpct_inline__ float get_selected_fraction(size_t nselected) const
   {
     return (size_used()) ? (float)nselected / size_used() : 0.;
   }
 
   /** @brief Clear the content */
-  __host__ __device__ __forceinline__ void clear()
+  __dpct_inline__ void clear()
   {
     fNused.store(0);
     fNshared.store(0);
@@ -480,13 +583,13 @@ public:
   }
 
   /** @brief Add elements at the end of the vector */
-  __host__ __device__ void add_elements(unsigned n)
+  void add_elements(unsigned n)
   {
     // this should be protected, but has to be launched as a templated kernel...
     // update the mask from bits fNshared to fNshared + n in one go
-#ifndef COPCORE_CUDA_COMPILER
-    using std::min;
-#endif
+//#ifndef COPCORE_CUDA_COMPILER
+//    using std::min;
+//#endif
     constexpr unsigned full32 = 0xFFFFFFFFu;
     auto set_bits             = [](unsigned from, unsigned to) {
       return (to - from == 31) ? full32 : (~(full32 << (to + 1 - from))) << from;
@@ -496,7 +599,7 @@ public:
     unsigned indmask   = start / 32;
     unsigned start_bit = start & 31;
     while (remaining > 0) {
-      unsigned end_bit = min(start_bit + remaining - 1, 31u);
+      unsigned end_bit = sycl::min(start_bit + remaining - 1, 31u);
       Mask_t contrib   = set_bits(start_bit, end_bit);
       if (contrib == full32)
         mask_at(indmask).store(contrib);
@@ -516,11 +619,11 @@ public:
   }
 
   /** @brief Update counters when removing elements */
-  __host__ __device__ __forceinline__ void remove_elements(unsigned n) { fNused -= n; }
+  __dpct_inline__ void remove_elements(unsigned n) { fNused -= n; }
 
   /** @brief Dispatch next free element at the end, nullptr if none left. Construct in place using provided params */
   template <typename... T>
-  __host__ __device__ __forceinline__ pointer next_free(const T &... params)
+  __dpct_inline__ pointer next_free(const T &... params)
   {
     // Operation may fail if the max size is exceeded. Has to be checked by the user.
     int index = fNbooked.fetch_add(1);
@@ -543,7 +646,7 @@ public:
   }
 
   /** @brief Release the element at index i */
-  __host__ __device__ __forceinline__ void release(Index_t i)
+  __dpct_inline__ void release(Index_t i)
   {
     // Make sure the element is not already released
     assert(is_used(i) && "Trying to release an element not in use.");
@@ -552,130 +655,74 @@ public:
   }
 
   /** @brief Check if the element with index i is used */
-  __host__ __device__ __forceinline__ bool is_used(Index_t i) const
+  __dpct_inline__ bool is_used(Index_t i) const
   {
     assert(i < fCapacity);
     return (mask_at(i / 32).load() & (1 << (i & 31)));
   }
 
   /** @brief Check if container is fully distributed */
-  __host__ __device__ __forceinline__ bool is_full() const { return (size() == fCapacity); }
+  __dpct_inline__ bool is_full() const { return (size() == fCapacity); }
 
   /** @brief Check if container is empty */
-  __host__ __device__ __forceinline__ bool is_empty() const { return (size_used() == 0); }
+  __dpct_inline__ bool is_empty() const { return (size_used() == 0); }
 
   /** @brief Fills selection vector fSelected with element indices passing the user predicate
    *  @param pred Predicate function taking as arguments the SparseVector pointer and the element index
    *  @returns Number of selected elements. Must be reset to 0 when calling the function.
    */
-#ifdef COPCORE_CUDA_COMPILER
+
   template <typename Predicate, typename Container>
   static void select(const Vector_t *svect, Predicate pred_func, Container *output, unsigned *num_selected)
   {
-    sa_detail::select_kernel_launcher<Type, Predicate, Container>
-        <<<1, 1>>>((Vector_t *)svect, pred_func, output, num_selected);
+        dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+            cgh.parallel_for(
+                sycl::nd_range<3>(sycl::range<3>(1, 1, 1),
+                                  sycl::range<3>(1, 1, 1)),
+                [=](sycl::nd_item<3> item_ct1) {
+                    select_kernel_launcher<Type, Predicate, Container>(
+                        (Vector_t *)svect, pred_func, output, num_selected,
+                        item_ct1);
+                });
+        });
   }
-#else
-  template <typename Predicate, typename Container>
-  static void select(const Vector_t *svect, Predicate pred_func, Container *output, unsigned *num_selected)
-  {
-    // host version
-    const int num_items = svect->size();
-    *num_selected       = 0;
-    for (int i = 0; i < num_items; ++i) {
-      if (svect->is_used(i) && pred_func(i, svect)) output[(*num_selected)++] = i;
-    }
-  }
-#endif
+
+*/
 
   /** @brief Fills selection vector fSelected with element indices passing the user predicate
    *  @param pred Predicate function taking as arguments the SparseVector pointer and the element index
    *  @returns Number of selected elements. Must be reset to 0 when calling the function.
    */
-#ifdef COPCORE_CUDA_COMPILER
   template <typename Predicate>
   static void select_and_move(Vector_t *svect, Predicate pred_func, Vector_t *output, unsigned *num_selected)
   {
     sa_detail::select_and_move_kernel_launcher<Type><<<1, 1>>>(svect, pred_func, output, num_selected);
   }
-#else
-  template <typename Predicate>
-  static void select_and_move(Vector_t *svect, Predicate pred_func, Vector_t *output, unsigned *num_selected)
-  {
-    // host version
-    // copy to destination vect
-    int mask_size         = svect->size() / 32;
-    const int dest_offset = output->size();
-    *num_selected         = 0;
-    for (auto im = 0; im <= mask_size; ++im) {
-      Mask_t mask = svect->mask_at(im).load();
-      for (auto i = 0; i < 32; ++i) {
-        if ((mask & (1 << (i & 31))) && pred_func(32 * im + i, svect)) {
-          int idest = dest_offset + (*num_selected)++;
-          new (output->data() + idest) Type((*svect)[32 * im + i]);
-          output->set_bit(idest);
-          mask &= ~(1 << (i & 31)); // remove selected element from mask
-          svect->mask_at(im).store(mask);
-        }
-      }
-    }
-    output->fNused += *num_selected;
-    output->fNshared += *num_selected;
-    svect->fNused -= *num_selected;
-  }
-#endif
 
   template <typename Container>
   static void select_used(const Vector_t *svect, Container *output, unsigned *num_selected)
   {
-    Vector_t::select(svect, [] __device__(int, const Vector_t *) { return true; }, output, num_selected);
+    Vector_t::select(svect, [] (int, const Vector_t *) { return true; }, output, num_selected);
   }
 
   /** @brief Compacts used elements of this vect into a destination vect. */
-#ifdef COPCORE_CUDA_COMPILER
+
   static void compact(Vector_t *svect, Vector_t *output, unsigned *num_selected)
   {
     // copy to destination vector
     sa_detail::select_and_move_kernel_launcher<Type>
-        <<<1, 1>>>(svect, [] __device__(int, const Vector_t *) { return true; }, output, num_selected);
+        <<<1, 1>>>(svect, [] (int, const Vector_t *) { return true; }, output, num_selected);
     // update output vector
     sa_detail::clear_kernel<Type><<<1, 1>>>(svect);
   }
-#else
-  static void compact(Vector_t *svect, Vector_t *output, unsigned *num_selected)
-  {
-    // host version
-    // copy to destination vector
-    int mask_size         = svect->size() / 32;
-    const int dest_offset = output->size();
-    *num_selected         = 0;
-    for (auto im = 0; im <= mask_size; ++im) {
-      Mask_t mask = svect->mask_at(im).load();
-      for (auto i = 0; i < 32; ++i) {
-        if (mask & (1 << (i & 31))) new (output->data() + dest_offset + (*num_selected)++) Type((*svect)[32 * im + i]);
-      }
-    }
-    output->fNused += *num_selected;
-    output->fNshared += *num_selected;
-    svect->clear();
-  }
-#endif
 
   /** @brief Fills selection vector fSelected with indices of remaining used elements. */
-#ifdef COPCORE_CUDA_COMPILER
   static void release_selected(Vector_t *svect, unsigned *selection, unsigned *nselected)
   {
     // we pass n_elements by pointer to avoid having to copy the value to the host
     sa_detail::release_selected_kernel_launcher<Type><<<1, 1>>>(svect, selection, nselected);
   }
-#else
-  static void release_selected(Vector_t *svect, unsigned *selection, unsigned *nselected)
-  {
-    // host version
-    for (int i = 0; i < *nselected; ++i)
-      svect->release(selection[i]);
-  }
-#endif
+
 };
 
 /** @brief A (non-resizeable variable size vect adopting memory and having elements added in an atomic way */
@@ -691,33 +738,35 @@ private:
                                               // constructor)
   unsigned int fMasks[N / 32];                // array of masks
 
-#ifdef COPCORE_CUDA_COMPILER
   friend void sa_detail::construct_vector<Type, N>(void *, int);
-#endif
-  __host__ __device__ SparseVector(size_t totalCapacity) : SparseVectorInterface<Type>(totalCapacity)
+
+  SparseVector(size_t totalCapacity) : SparseVectorInterface<Type>(totalCapacity)
   {
     Base_t::fBegin     = fData;
     Base_t::fMaskBegin = fMasks;
   }
 
-  __host__ __device__ SparseVector(const SparseVector &other) = delete;
+  SparseVector(const SparseVector &other) = delete;
 
-  __host__ __device__ const SparseVector &operator=(const SparseVector &other) = delete;
+  const SparseVector &operator=(const SparseVector &other) = delete;
 
 protected:
   static SparseVector *ConstructOnDevice(void *addr)
   {
-#ifndef COPCORE_CUDA_COMPILER
-    return nullptr; // should never happen
-#else
+
     int numSMs = copcore::get_num_SMs();
-    sa_detail::construct_vector<Type, N><<<1, 1>>>(addr, numSMs);
+        dpct::get_default_queue().submit([&](sycl::handler &cgh) {
+            cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, 1),
+                                               sycl::range<3>(1, 1, 1)),
+                             [=](sycl::nd_item<3> item_ct1) {
+                                 construct_vector<Type, N>(addr, numSMs);
+                             });
+        });
     return reinterpret_cast<SparseVector<Type, N> *>(addr);
-#endif
   }
 
 public:
-  __host__ static SparseVector *MakeInstanceAt(void *addr = nullptr)
+  static SparseVector *MakeInstanceAt(void *addr = nullptr)
   {
     if (!addr) return new SparseVector(N);
     bool devicePtr = copcore::is_device_pointer(addr);
@@ -728,4 +777,4 @@ public:
 }; // End class SparseVector
 } // End namespace adept
 
-#endif // ADEPT_SPARSEVECTOR_H_
+#endif // ADEPT_1SPARSEVECTOR_H

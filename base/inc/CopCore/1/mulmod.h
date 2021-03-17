@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2020 CERN
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
-#define DPCT_USM_LEVEL_NONE
 #include <CL/sycl.hpp>
 #include <dpct/dpct.hpp>
 #include <cstdint>
