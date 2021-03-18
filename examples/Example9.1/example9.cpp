@@ -3,8 +3,8 @@
 
 #include "example9.h"
 
-#include <AdePT/ArgParser.h>
-#include <CopCore/SystemOfUnits.h>
+#include <AdePT/1/ArgParser.h>
+#include <CopCore/1/SystemOfUnits.h>
 
 #include <G4NistManager.hh>
 #include <G4Material.hh>
