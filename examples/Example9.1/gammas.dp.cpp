@@ -1,7 +1,9 @@
 // SPDX-FileCopyrightText: 2021 CERN
 // SPDX-License-Identifier: Apache-2.0
 
-#include "example9.cuh"
+#include <CL/sycl.hpp>
+#include <dpct/dpct.hpp>
+#include "example9.dp.hpp"
 
 #include <AdePT/1/LoopNavigator.h>
 #include <CopCore/1/PhysicalConstants.h>
@@ -15,15 +17,22 @@
 #include <G4HepEmGammaInteractionCompton.icc>
 #include <G4HepEmGammaInteractionConversion.icc>
 
-__device__ struct G4HepEmGammaManager gammaManager;
+dpct::global_memory<struct G4HepEmGammaManager, 0> gammaManager;
 
 constexpr double kPush = 1.e-8 * copcore::units::cm;
 
-__global__ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries secondaries,
-                                adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring)
+void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries secondaries,
+                                adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring,
+                                sycl::nd_item<3> item_ct1,
+                                struct G4HepEmGammaManager *gammaManager,
+                                struct G4HepEmParameters g4HepEmPars,
+                                struct G4HepEmData g4HepEmData)
 {
   int activeSize = active->size();
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < activeSize; i += blockDim.x * gridDim.x) {
+  for (int i = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
+               item_ct1.get_local_id(2);
+       i < activeSize;
+       i += item_ct1.get_local_range().get(2) * item_ct1.get_group_range(2)) {
     const int slot      = (*active)[i];
     Track &currentTrack = gammas[slot];
     auto volume         = currentTrack.currentState.Top();
@@ -43,14 +52,14 @@ __global__ void TransportGammas(Track *gammas, const adept::MParray *active, Sec
     for (int ip = 0; ip < 3; ++ip) {
       double numIALeft = currentTrack.numIALeft[ip];
       if (numIALeft <= 0) {
-        numIALeft                  = -std::log(currentTrack.Uniform());
+        numIALeft = -sycl::log(currentTrack.Uniform());
         currentTrack.numIALeft[ip] = numIALeft;
       }
       emTrack.SetNumIALeft(numIALeft, ip);
     }
 
     // Call G4HepEm to compute the physics step limit.
-    gammaManager.HowFar(&g4HepEmData, &g4HepEmPars, &emTrack);
+    gammaManager->HowFar(&g4HepEmData, &g4HepEmPars, &emTrack);
 
     // Get result into variables.
     double geometricalStepLengthFromPhysics = emTrack.GetGStepLength();
@@ -69,7 +78,7 @@ __global__ void TransportGammas(Track *gammas, const adept::MParray *active, Sec
       emTrack.SetOnBoundary(true);
     }
 
-    gammaManager.UpdateNumIALeft(&emTrack);
+    gammaManager->UpdateNumIALeft(&emTrack);
 
     // Save the `number-of-interaction-left` in our track.
     for (int ip = 0; ip < 3; ++ip) {
@@ -79,7 +88,7 @@ __global__ void TransportGammas(Track *gammas, const adept::MParray *active, Sec
 
     if (currentTrack.nextState.IsOnBoundary()) {
       // For now, just count that we hit something.
-      atomicAdd(&scoring->hits, 1);
+      sycl::atomic<int>(sycl::global_ptr<int>(&scoring->hits)).fetch_add(1);
 
       activeQueue->push_back(slot);
       //relocateQueue->push_back(slot);
@@ -112,7 +121,7 @@ __global__ void TransportGammas(Track *gammas, const adept::MParray *active, Sec
         continue;
       }
 
-      double logEnergy = std::log(energy);
+      double logEnergy = sycl::log((double)energy);
       double elKinEnergy, posKinEnergy;
       SampleKinEnergies(&g4HepEmData, energy, logEnergy, theMCIndex, elKinEnergy, posKinEnergy, &rnge);
 
@@ -122,7 +131,8 @@ __global__ void TransportGammas(Track *gammas, const adept::MParray *active, Sec
 
       Track &electron = secondaries.electrons.NextTrack();
       Track &positron = secondaries.positrons.NextTrack();
-      atomicAdd(&scoring->secondaries, 2);
+      sycl::atomic<int>(sycl::global_ptr<int>(&scoring->secondaries))
+          .fetch_add(2);
 
       electron.InitAsSecondary(/*parent=*/currentTrack);
       electron.energy = elKinEnergy;
@@ -151,14 +161,15 @@ __global__ void TransportGammas(Track *gammas, const adept::MParray *active, Sec
       if (energyEl > LowEnergyThreshold) {
         // Create a secondary electron and sample/compute directions.
         Track &electron = secondaries.electrons.NextTrack();
-        atomicAdd(&scoring->secondaries, 1);
+        sycl::atomic<int>(sycl::global_ptr<int>(&scoring->secondaries))
+            .fetch_add(1);
 
         electron.InitAsSecondary(/*parent=*/currentTrack);
         electron.energy = energyEl;
         electron.dir = energy * currentTrack.dir - newEnergyGamma * newDirGamma;
         electron.dir.Normalize();
       } else {
-        atomicAdd(&scoring->energyDeposit, energyEl);
+        dpct::atomic_fetch_add(&scoring->energyDeposit, energyEl);
       }
 
       // Check the new gamma energy and deposit if below threshold.
@@ -169,14 +180,14 @@ __global__ void TransportGammas(Track *gammas, const adept::MParray *active, Sec
         // The current track continues to live.
         activeQueue->push_back(slot);
       } else {
-        atomicAdd(&scoring->energyDeposit, newEnergyGamma);
+        dpct::atomic_fetch_add(&scoring->energyDeposit, newEnergyGamma);
         // The current track is killed by not enqueuing into the next activeQueue.
       }
       break;
     }
     case 2: {
       // Invoke photoelectric process: right now only absorb the gamma.
-      atomicAdd(&scoring->energyDeposit, energy);
+      dpct::atomic_fetch_add(&scoring->energyDeposit, energy);
       // The current track is killed by not enqueuing into the next activeQueue.
       break;
     }

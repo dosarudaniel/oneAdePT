@@ -4,13 +4,13 @@
 #include "example9.h"
 #include "example9.cuh"
 
-#include <AdePT/1/Atomic.h>
-#include <AdePT/1/LoopNavigator.h>
-#include <AdePT/1/MParray.h>
+#include <AdePT/Atomic.h>
+#include <AdePT/LoopNavigator.h>
+#include <AdePT/MParray.h>
 
-#include <CopCore/1/Global.h>
-#include <CopCore/1/PhysicalConstants.h>
-#include <CopCore/1/Ranluxpp.h>
+#include <CopCore/Global.h>
+#include <CopCore/PhysicalConstants.h>
+#include <CopCore/Ranluxpp.h>
 
 #include <VecGeom/base/Config.h>
 #include <VecGeom/base/Stopwatch.h>
@@ -267,10 +267,10 @@ void example9(const vecgeom::cxx::VPlacedVolume *world, int numParticles, double
       TransportElectrons</*IsElectron*/ true><<<transportBlocks, TransportThreads, 0, electrons.stream>>>(
           electrons.tracks, electrons.queues.currentlyActive, secondaries, electrons.queues.nextActive,
           electrons.queues.relocate, scoring);
-
+      /*
       RelocateToNextVolume<<<relocateBlocks, RelocateThreads, 0, electrons.stream>>>(electrons.tracks,
                                                                                      electrons.queues.relocate);
-
+      */
       COPCORE_CUDA_CHECK(cudaEventRecord(electrons.event, electrons.stream));
       COPCORE_CUDA_CHECK(cudaStreamWaitEvent(stream, electrons.event, 0));
     }
@@ -286,10 +286,10 @@ void example9(const vecgeom::cxx::VPlacedVolume *world, int numParticles, double
       TransportElectrons</*IsElectron*/ false><<<transportBlocks, TransportThreads, 0, positrons.stream>>>(
           positrons.tracks, positrons.queues.currentlyActive, secondaries, positrons.queues.nextActive,
           positrons.queues.relocate, scoring);
-
+      /*
       RelocateToNextVolume<<<relocateBlocks, RelocateThreads, 0, positrons.stream>>>(positrons.tracks,
                                                                                      positrons.queues.relocate);
-
+      */
       COPCORE_CUDA_CHECK(cudaEventRecord(positrons.event, positrons.stream));
       COPCORE_CUDA_CHECK(cudaStreamWaitEvent(stream, positrons.event, 0));
     }
@@ -305,10 +305,10 @@ void example9(const vecgeom::cxx::VPlacedVolume *world, int numParticles, double
       TransportGammas<<<transportBlocks, TransportThreads, 0, gammas.stream>>>(
           gammas.tracks, gammas.queues.currentlyActive, secondaries, gammas.queues.nextActive,
           gammas.queues.relocate, scoring);
-
+      /*
       RelocateToNextVolume<<<relocateBlocks, RelocateThreads, 0, gammas.stream>>>(gammas.tracks,
                                                                                   gammas.queues.relocate);
-
+      */
       COPCORE_CUDA_CHECK(cudaEventRecord(gammas.event, gammas.stream));
       COPCORE_CUDA_CHECK(cudaStreamWaitEvent(stream, gammas.event, 0));
     }

@@ -27,7 +27,7 @@ __device__ struct G4HepEmElectronManager electronManager;
 // generate secondaries.
 template <bool IsElectron>
 __global__ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondaries secondaries,
-                                   adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring)
+                                   adept::MParray *activeQueue , adept::MParray *relocateQueue, GlobalScoring *scoring)
 {
   constexpr int Charge  = IsElectron ? -1 : 1;
   constexpr double Mass = copcore::units::kElectronMassC2;
@@ -129,7 +129,9 @@ __global__ void TransportElectrons(Track *electrons, const adept::MParray *activ
       atomicAdd(&scoring->hits, 1);
 
       activeQueue->push_back(slot);
-      relocateQueue->push_back(slot);
+      // relocateQueue->push_back(slot);
+
+      //LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
 
       // Move to the next boundary.
       currentTrack.SwapStates();

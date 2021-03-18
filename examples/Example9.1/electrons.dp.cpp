@@ -1,7 +1,9 @@
 // SPDX-FileCopyrightText: 2021 CERN
 // SPDX-License-Identifier: Apache-2.0
 
-#include "example9.cuh"
+#include <CL/sycl.hpp>
+#include <dpct/dpct.hpp>
+#include "example9.dp.hpp"
 
 #include <Field/1/fieldPropagatorConstBz.h>
 
@@ -20,21 +22,28 @@
 #include <G4HepEmElectronInteractionIoni.icc>
 #include <G4HepEmPositronInteractionAnnihilation.icc>
 
-__device__ struct G4HepEmElectronManager electronManager;
+dpct::global_memory<struct G4HepEmElectronManager, 0> electronManager;
 
 // Compute the physics and geometry step limit, transport the electrons while
 // applying the continuous effects and maybe a discrete process that could
 // generate secondaries.
 template <bool IsElectron>
-__global__ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondaries secondaries,
-                                   adept::MParray *activeQueue , adept::MParray *relocateQueue, GlobalScoring *scoring)
+void TransportElectrons(Track *electrons, const adept::MParray *active, Secondaries secondaries,
+                                   adept::MParray *activeQueue , adept::MParray *relocateQueue, GlobalScoring *scoring,
+                                   sycl::nd_item<3> item_ct1,
+                                   struct G4HepEmElectronManager *electronManager,
+                                   struct G4HepEmParameters g4HepEmPars,
+                                   struct G4HepEmData g4HepEmData)
 {
   constexpr int Charge  = IsElectron ? -1 : 1;
   constexpr double Mass = copcore::units::kElectronMassC2;
   fieldPropagatorConstBz fieldPropagatorBz(BzFieldValue);
 
   int activeSize = active->size();
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < activeSize; i += blockDim.x * gridDim.x) {
+  for (int i = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
+               item_ct1.get_local_id(2);
+       i < activeSize;
+       i += item_ct1.get_local_range().get(2) * item_ct1.get_group_range(2)) {
     const int slot      = (*active)[i];
     Track &currentTrack = electrons[slot];
     auto volume         = currentTrack.currentState.Top();
@@ -56,14 +65,14 @@ __global__ void TransportElectrons(Track *electrons, const adept::MParray *activ
     for (int ip = 0; ip < 3; ++ip) {
       double numIALeft = currentTrack.numIALeft[ip];
       if (numIALeft <= 0) {
-        numIALeft                  = -std::log(currentTrack.Uniform());
+        numIALeft = -sycl::log(currentTrack.Uniform());
         currentTrack.numIALeft[ip] = numIALeft;
       }
       theTrack->SetNumIALeft(numIALeft, ip);
     }
 
     // Call G4HepEm to compute the physics step limit.
-    electronManager.HowFar(&g4HepEmData, &g4HepEmPars, &elTrack);
+    electronManager->HowFar(&g4HepEmData, &g4HepEmPars, &elTrack);
 
     // Get result into variables.
     double geometricalStepLengthFromPhysics = theTrack->GetGStepLength();
@@ -87,10 +96,12 @@ __global__ void TransportElectrons(Track *electrons, const adept::MParray *activ
     }
 
     // Apply continuous effects.
-    bool stopped = electronManager.PerformContinuous(&g4HepEmData, &g4HepEmPars, &elTrack);
+    bool stopped = electronManager->PerformContinuous(&g4HepEmData,
+                                                      &g4HepEmPars, &elTrack);
     // Collect the changes.
     currentTrack.energy = theTrack->GetEKin();
-    atomicAdd(&scoring->energyDeposit, theTrack->GetEnergyDeposit());
+    dpct::atomic_fetch_add(&scoring->energyDeposit,
+                           theTrack->GetEnergyDeposit());
 
     // Save the `number-of-interaction-left` in our track.
     for (int ip = 0; ip < 3; ++ip) {
@@ -104,13 +115,22 @@ __global__ void TransportElectrons(Track *electrons, const adept::MParray *activ
         // directions (isotropic).
         Track &gamma1 = secondaries.gammas.NextTrack();
         Track &gamma2 = secondaries.gammas.NextTrack();
-        atomicAdd(&scoring->secondaries, 2);
+        sycl::atomic<int>(sycl::global_ptr<int>(&scoring->secondaries))
+            .fetch_add(2);
 
         const double cost = 2 * currentTrack.Uniform() - 1;
-        const double sint = sqrt(1 - cost * cost);
+        const double sint = sycl::sqrt(1 - cost * cost);
         const double phi  = k2Pi * currentTrack.Uniform();
         double sinPhi, cosPhi;
-        sincos(phi, &sinPhi, &cosPhi);
+        /*
+        DPCT1017:0: The sycl::sincos call is used instead of the sincos call.
+        These two calls do not provide exactly the same functionality. Check the
+        potential precision and/or performance issues for the generated code.
+        */
+        sinPhi = sycl::sincos(
+            phi,
+            sycl::make_ptr<double, sycl::access::address_space::global_space>(
+                &cosPhi));
 
         gamma1.InitAsSecondary(/*parent=*/currentTrack);
         gamma1.energy = copcore::units::kElectronMassC2;
@@ -126,7 +146,7 @@ __global__ void TransportElectrons(Track *electrons, const adept::MParray *activ
 
     if (currentTrack.nextState.IsOnBoundary()) {
       // For now, just count that we hit something.
-      atomicAdd(&scoring->hits, 1);
+      sycl::atomic<int>(sycl::global_ptr<int>(&scoring->hits)).fetch_add(1);
 
       activeQueue->push_back(slot);
       // relocateQueue->push_back(slot);
@@ -147,7 +167,8 @@ __global__ void TransportElectrons(Track *electrons, const adept::MParray *activ
     currentTrack.numIALeft[winnerProcessIndex] = -1.0;
 
     // Check if a delta interaction happens instead of the real discrete process.
-    if (electronManager.CheckDelta(&g4HepEmData, theTrack, currentTrack.Uniform())) {
+    if (electronManager->CheckDelta(&g4HepEmData, theTrack,
+                                    currentTrack.Uniform())) {
       // A delta interaction happened, move on.
       activeQueue->push_back(slot);
       continue;
@@ -170,7 +191,8 @@ __global__ void TransportElectrons(Track *electrons, const adept::MParray *activ
       SampleDirectionsIoni(energy, deltaEkin, dirSecondary, dirPrimary, &rnge);
 
       Track &secondary = secondaries.electrons.NextTrack();
-      atomicAdd(&scoring->secondaries, 1);
+      sycl::atomic<int>(sycl::global_ptr<int>(&scoring->secondaries))
+          .fetch_add(1);
 
       secondary.InitAsSecondary(/*parent=*/currentTrack);
       secondary.energy = deltaEkin;
@@ -184,7 +206,7 @@ __global__ void TransportElectrons(Track *electrons, const adept::MParray *activ
     }
     case 1: {
       // Invoke model for Bremsstrahlung: either SB- or Rel-Brem.
-      double logEnergy = std::log(energy);
+      double logEnergy = sycl::log((double)energy);
       double deltaEkin = energy < g4HepEmPars.fElectronBremModelLim
                              ? SampleETransferBremSB(&g4HepEmData, energy, logEnergy, theMCIndex, &rnge, IsElectron)
                              : SampleETransferBremRB(&g4HepEmData, energy, logEnergy, theMCIndex, &rnge, IsElectron);
@@ -194,7 +216,8 @@ __global__ void TransportElectrons(Track *electrons, const adept::MParray *activ
       SampleDirectionsBrem(energy, deltaEkin, dirSecondary, dirPrimary, &rnge);
 
       Track &gamma = secondaries.gammas.NextTrack();
-      atomicAdd(&scoring->secondaries, 1);
+      sycl::atomic<int>(sycl::global_ptr<int>(&scoring->secondaries))
+          .fetch_add(1);
 
       gamma.InitAsSecondary(/*parent=*/currentTrack);
       gamma.energy = deltaEkin;
@@ -216,7 +239,8 @@ __global__ void TransportElectrons(Track *electrons, const adept::MParray *activ
 
       Track &gamma1 = secondaries.gammas.NextTrack();
       Track &gamma2 = secondaries.gammas.NextTrack();
-      atomicAdd(&scoring->secondaries, 2);
+      sycl::atomic<int>(sycl::global_ptr<int>(&scoring->secondaries))
+          .fetch_add(2);
 
       gamma1.InitAsSecondary(/*parent=*/currentTrack);
       gamma1.energy = theGamma1Ekin;
@@ -234,10 +258,10 @@ __global__ void TransportElectrons(Track *electrons, const adept::MParray *activ
 }
 
 // Instantiate template for electrons and positrons.
-template __global__ void TransportElectrons</*IsElectron*/ true>(Track *electrons, const adept::MParray *active,
+template void TransportElectrons</*IsElectron*/ true>(Track *electrons, const adept::MParray *active,
                                                                  Secondaries secondaries, adept::MParray *activeQueue,
                                                                  adept::MParray *relocateQueue, GlobalScoring *scoring);
-template __global__ void TransportElectrons</*IsElectron*/ false>(Track *electrons, const adept::MParray *active,
+template void TransportElectrons</*IsElectron*/ false>(Track *electrons, const adept::MParray *active,
                                                                   Secondaries secondaries, adept::MParray *activeQueue,
                                                                   adept::MParray *relocateQueue,
                                                                   GlobalScoring *scoring);

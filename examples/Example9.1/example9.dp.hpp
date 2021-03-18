@@ -4,9 +4,11 @@
 #ifndef EXAMPLE9_CUH
 #define EXAMPLE9_CUH
 
-#include <AdePT/MParray.h>
-#include <CopCore/SystemOfUnits.h>
-#include <CopCore/Ranluxpp.h>
+#include <CL/sycl.hpp>
+#include <dpct/dpct.hpp>
+#include <AdePT/1/MParray.h>
+#include <CopCore/1/SystemOfUnits.h>
+#include <CopCore/1/Ranluxpp.h>
 
 #include <G4HepEmData.hh>
 #include <G4HepEmParameters.hh>
@@ -28,16 +30,16 @@ struct Track {
   vecgeom::NavStateIndex currentState;
   vecgeom::NavStateIndex nextState;
 
-  __host__ __device__ double Uniform() { return rngState.Rndm(); }
+  double Uniform() { return rngState.Rndm(); }
 
-  __host__ __device__ void SwapStates()
+  void SwapStates()
   {
     auto state         = this->currentState;
     this->currentState = this->nextState;
     this->nextState    = state;
   }
 
-  __host__ __device__ void InitAsSecondary(const Track &parent)
+  void InitAsSecondary(const Track &parent)
   {
     // Initialize a new PRNG state.
     this->rngState = parent.rngState;
@@ -58,8 +60,8 @@ struct Track {
 
 class RanluxppDoubleEngine : public G4HepEmRandomEngine {
   // Wrapper functions to call into RanluxppDouble.
-  static __host__ __device__ double FlatWrapper(void *object) { return ((RanluxppDouble *)object)->Rndm(); }
-  static __host__ __device__ void FlatArrayWrapper(void *object, const int size, double *vect)
+  static double FlatWrapper(void *object) { return ((RanluxppDouble *)object)->Rndm(); }
+  static void FlatArrayWrapper(void *object, const int size, double *vect)
   {
     for (int i = 0; i < size; i++) {
       vect[i] = ((RanluxppDouble *)object)->Rndm();
@@ -67,7 +69,7 @@ class RanluxppDoubleEngine : public G4HepEmRandomEngine {
   }
 
 public:
-  __host__ __device__ RanluxppDoubleEngine(RanluxppDouble *engine)
+  RanluxppDoubleEngine(RanluxppDouble *engine)
       : G4HepEmRandomEngine(/*object=*/engine, &FlatWrapper, &FlatArrayWrapper)
   {
   }
@@ -88,9 +90,9 @@ class SlotManager {
   const int fMaxSlot;
 
 public:
-  __host__ __device__ SlotManager(int maxSlot) : fMaxSlot(maxSlot) { fNextSlot = 0; }
+  SlotManager(int maxSlot) : fMaxSlot(maxSlot) { fNextSlot = 0; }
 
-  __host__ __device__ int NextSlot()
+  int NextSlot()
   {
     int next = fNextSlot.fetch_add(1);
     if (next >= fMaxSlot) return -1;
@@ -105,10 +107,10 @@ class ParticleGenerator {
   adept::MParray *fActiveQueue;
 
 public:
-  __host__ __device__ ParticleGenerator(Track *tracks, SlotManager *slotManager, adept::MParray *activeQueue)
+  ParticleGenerator(Track *tracks, SlotManager *slotManager, adept::MParray *activeQueue)
     : fTracks(tracks), fSlotManager(slotManager), fActiveQueue(activeQueue) {}
 
-  __host__ __device__ Track &NextTrack()
+  Track &NextTrack()
   {
     int slot = fSlotManager->NextSlot();
     if (slot == -1) {
@@ -128,25 +130,29 @@ struct Secondaries {
 
 
 // Kernels in different TUs.
-__global__ void RelocateToNextVolume(Track *allTracks, const adept::MParray *relocateQueue);
+void RelocateToNextVolume(Track *allTracks, const adept::MParray *relocateQueue);
 
 template <bool IsElectron>
-__global__ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondaries secondaries,
-                                   adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring);
-extern template __global__ void TransportElectrons</*IsElectron*/true>(
+void TransportElectrons(Track *electrons, const adept::MParray *active, Secondaries secondaries,
+                                   adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring,
+                                   sycl::nd_item<3> item_ct1,
+                                   struct G4HepEmElectronManager *electronManager,
+                                   struct G4HepEmParameters g4HepEmPars,
+                                   struct G4HepEmData g4HepEmData);
+extern template void TransportElectrons</*IsElectron*/true>(
     Track *electrons, const adept::MParray *active, Secondaries secondaries, adept::MParray *activeQueue,
     adept::MParray *relocateQueue, GlobalScoring *scoring);
-extern template __global__ void TransportElectrons</*IsElectron*/false>(
+extern template void TransportElectrons</*IsElectron*/false>(
     Track *electrons, const adept::MParray *active, Secondaries secondaries, adept::MParray *activeQueue,
     adept::MParray *relocateQueue, GlobalScoring *scoring);
 
-__global__ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries secondaries,
+void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries secondaries,
                                 adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring);
 
 // Constant data structures from G4HepEm accessed by the kernels.
 // (defined in example9.cu)
-extern __constant__ __device__ struct G4HepEmParameters g4HepEmPars;
-extern __constant__ __device__ struct G4HepEmData g4HepEmData;
+dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
+dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
 
 constexpr float BzFieldValue = 0.1 * copcore::units::tesla;
 
