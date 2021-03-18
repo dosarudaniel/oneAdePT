@@ -20,6 +20,7 @@ set(CMAKE_CUDA_EXTENSIONS OFF)
 
 set(CMAKE_CUDA_ARCHITECTURES 61 CACHE STRING "CUDA architectures")
 
+
 set(SYCL_INCLUDE_DIR "${SYCL_ROOT}/include/")
 set(SYCL_LIB "${SYCL_ROOT}/lib/libsycl.so")
 set(SYCL_FLAGS
