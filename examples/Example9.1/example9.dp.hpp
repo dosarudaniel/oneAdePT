@@ -151,8 +151,8 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
 
 // Constant data structures from G4HepEm accessed by the kernels.
 // (defined in example9.cu)
-dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
-dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
+// dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
+// dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
 
 constexpr float BzFieldValue = 0.1 * copcore::units::tesla;
 
