@@ -33,6 +33,8 @@
 #include <stdio.h>
 #include <chrono>
 
+// Constant data structures from G4HepEm accessed by the kernels.
+// (defined in example9.cu)
 dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
 dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
 
