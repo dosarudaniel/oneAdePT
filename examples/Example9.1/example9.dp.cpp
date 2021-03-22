@@ -143,20 +143,6 @@ struct ParticleType {
 
     NumParticleTypes,
   };
-
-
-  // default constructor
-  ParticleType() {}
-
-  // Copy constructor
-  ParticleType(const ParticleType &particleType) {
-    tracks = particleType.tracks;
-    slotManager = particleType.slotManager;
-    queues = particleType.queues;
-    stream = particleType.stream;
-    event = particleType.event;
-    event_ct1 = particleType.event_ct1;
-  }
 };
 
 // A bundle of queues for the three particle types.
@@ -418,15 +404,22 @@ void example9(const vecgeom::cxx::VPlacedVolume *world, int numParticles, double
       relocateBlocks = std::min(numElectrons, MaxBlocks);
 
       electrons.stream->submit([&](sycl::handler &cgh) {
+        Track *electronsTracks = electrons.tracks;
+        adept::MParray *currentlyActive = electrons.queues.currentlyActive;
+        adept::MParray *nextActive = electrons.queues.nextActive;
+        adept::MParray *relocate = electrons.queues.relocate;
         cgh.parallel_for(
             sycl::nd_range<3>(sycl::range<3>(1, 1, transportBlocks) *
                                   sycl::range<3>(1, 1, TransportThreads),
                               sycl::range<3>(1, 1, TransportThreads)),
             [=](sycl::nd_item<3> item_ct1) {
-              TransportElectrons<true>(electrons.tracks,
-                                       electrons.queues.currentlyActive,
-                                       secondaries, electrons.queues.nextActive,
-                                       electrons.queues.relocate, scoring, item_ct1);
+              TransportElectrons<true>(electronsTracks,
+                                       currentlyActive,
+                                       secondaries, 
+                                       nextActive,
+                                       relocate, 
+                                       scoring, 
+                                       item_ct1);
             });
       });
       /*
@@ -461,15 +454,23 @@ void example9(const vecgeom::cxx::VPlacedVolume *world, int numParticles, double
       relocateBlocks = std::min(numPositrons, MaxBlocks);
 
       positrons.stream->submit([&](sycl::handler &cgh) {
+        Track *positronsTracks = positrons.tracks;
+        adept::MParray *pCurrentlyActive = positrons.queues.currentlyActive;
+        adept::MParray *pNextActive = positrons.queues.nextActive;
+        adept::MParray *pRelocate = positrons.queues.relocate;
+
         cgh.parallel_for(
             sycl::nd_range<3>(sycl::range<3>(1, 1, transportBlocks) *
                                   sycl::range<3>(1, 1, TransportThreads),
                               sycl::range<3>(1, 1, TransportThreads)),
             [=](sycl::nd_item<3> item_ct1) {
-              TransportElectrons<false>(
-                  positrons.tracks, positrons.queues.currentlyActive,
-                  secondaries, positrons.queues.nextActive,
-                  positrons.queues.relocate, scoring, item_ct1);
+              TransportElectrons<false>(positronsTracks,
+                                        pCurrentlyActive,
+                                        secondaries,
+                                        pNextActive,
+                                        pRelocate,
+                                        scoring,
+                                        item_ct1);
             });
       });
       /*
@@ -504,14 +505,22 @@ void example9(const vecgeom::cxx::VPlacedVolume *world, int numParticles, double
       relocateBlocks = std::min(numGammas, MaxBlocks);
 
       gammas.stream->submit([&](sycl::handler &cgh) {
+        Track *gammasTracks = gammas.tracks;
+        adept::MParray *gCurrentlyActive = gammas.queues.currentlyActive;
+        adept::MParray *gNextActive = gammas.queues.nextActive;
+        adept::MParray *gRelocate = gammas.queues.relocate;
         cgh.parallel_for(
             sycl::nd_range<3>(sycl::range<3>(1, 1, transportBlocks) *
                                   sycl::range<3>(1, 1, TransportThreads),
                               sycl::range<3>(1, 1, TransportThreads)),
             [=](sycl::nd_item<3> item_ct1) {
-              TransportGammas(gammas.tracks, gammas.queues.currentlyActive,
-                              secondaries, gammas.queues.nextActive,
-                              gammas.queues.relocate, scoring, item_ct1);
+              TransportGammas(gammasTracks,
+                              gCurrentlyActive,
+                              secondaries,
+                              gNextActive,
+                              gRelocate,
+                              scoring,
+                              item_ct1);
             });
       });
       /*
