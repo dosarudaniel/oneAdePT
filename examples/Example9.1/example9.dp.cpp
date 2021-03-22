@@ -35,8 +35,8 @@
 
 // Constant data structures from G4HepEm accessed by the kernels.
 // (defined in example9.cu)
-dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
-dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
+//dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
+//dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
 
 struct G4HepEmState {
   G4HepEmData data;
@@ -160,7 +160,7 @@ void InitParticleQueues(ParticleQueues queues, size_t Capacity)
 
 // Kernel function to initialize a set of primary particles.
 void InitPrimaries(ParticleGenerator generator, int particles, double energy,
-                              const vecgeom::VPlacedVolume *world,
+		   const vecgeom::VPlacedVolume *world,
                               sycl::nd_item<3> item_ct1)
 {
   for (int i = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
@@ -357,7 +357,7 @@ void example9(const vecgeom::cxx::VPlacedVolume *world, int numParticles, double
   ParticleGenerator electronGenerator(electrons.tracks, electrons.slotManager, electrons.queues.currentlyActive);
   q_ct1.submit([&](sycl::handler &cgh) {
     cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, initBlocks) *
-                                           sycl::range<3>(1, 1, InitThreads),
+                                       sycl::range<3>(1, 1, InitThreads),
                                        sycl::range<3>(1, 1, InitThreads)),
                      [=](sycl::nd_item<3> item_ct1) {
                        InitPrimaries(electronGenerator, numParticles, energy,
@@ -412,7 +412,7 @@ void example9(const vecgeom::cxx::VPlacedVolume *world, int numParticles, double
               TransportElectrons<true>(electrons.tracks,
                                        electrons.queues.currentlyActive,
                                        secondaries, electrons.queues.nextActive,
-                                       electrons.queues.relocate, scoring);
+                                       electrons.queues.relocate, scoring, item_ct1);
             });
       });
       /*
@@ -455,7 +455,7 @@ void example9(const vecgeom::cxx::VPlacedVolume *world, int numParticles, double
               TransportElectrons<false>(
                   positrons.tracks, positrons.queues.currentlyActive,
                   secondaries, positrons.queues.nextActive,
-                  positrons.queues.relocate, scoring);
+                  positrons.queues.relocate, scoring, item_ct1);
             });
       });
       /*
@@ -497,7 +497,7 @@ void example9(const vecgeom::cxx::VPlacedVolume *world, int numParticles, double
             [=](sycl::nd_item<3> item_ct1) {
               TransportGammas(gammas.tracks, gammas.queues.currentlyActive,
                               secondaries, gammas.queues.nextActive,
-                              gammas.queues.relocate, scoring);
+                              gammas.queues.relocate, scoring, item_ct1);
             });
       });
       /*

@@ -16,7 +16,7 @@
 #include <type_traits>
 #include <CopCore/1/Macros.h>
 
-#define COPCORE_IMPL clang++
+#define COPCORE_IMPL cpp
 
 namespace copcore {
 

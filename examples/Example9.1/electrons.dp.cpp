@@ -260,8 +260,13 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 // Instantiate template for electrons and positrons.
 template void TransportElectrons</*IsElectron*/ true>(Track *electrons, const adept::MParray *active,
                                                                  Secondaries secondaries, adept::MParray *activeQueue,
-                                                                 adept::MParray *relocateQueue, GlobalScoring *scoring);
+						                 adept::MParray *relocateQueue, GlobalScoring *scoring,
+                                                                 sycl::nd_item<3> item_ct1
+						      );
+
 template void TransportElectrons</*IsElectron*/ false>(Track *electrons, const adept::MParray *active,
                                                                   Secondaries secondaries, adept::MParray *activeQueue,
                                                                   adept::MParray *relocateQueue,
-                                                                  GlobalScoring *scoring);
+						                  GlobalScoring *scoring,
+                                                                  sycl::nd_item<3> item_ct1
+						       );

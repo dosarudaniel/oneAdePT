@@ -141,18 +141,18 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
                                    struct G4HepEmData g4HepEmData);
 extern template void TransportElectrons</*IsElectron*/true>(
     Track *electrons, const adept::MParray *active, Secondaries secondaries, adept::MParray *activeQueue,
-    adept::MParray *relocateQueue, GlobalScoring *scoring);
+    adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1);
 extern template void TransportElectrons</*IsElectron*/false>(
     Track *electrons, const adept::MParray *active, Secondaries secondaries, adept::MParray *activeQueue,
-    adept::MParray *relocateQueue, GlobalScoring *scoring);
+    adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1);
 
 void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries secondaries,
-                                adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring);
+		     adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1);
 
 // Constant data structures from G4HepEm accessed by the kernels.
 // (defined in example9.cu)
-// dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
-// dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
+dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
+dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
 
 constexpr float BzFieldValue = 0.1 * copcore::units::tesla;
 

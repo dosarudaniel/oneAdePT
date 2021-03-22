@@ -134,7 +134,7 @@
 #include <string.h>
 #include <cassert>
 
-//class TRootIOCtor;
+class TRootIOCtor;
 
 namespace copcore {
 
