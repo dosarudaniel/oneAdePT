@@ -135,10 +135,12 @@ void RelocateToNextVolume(Track *allTracks, const adept::MParray *relocateQueue)
 template <bool IsElectron>
 void TransportElectrons(Track *electrons, const adept::MParray *active, Secondaries secondaries,
                                    adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring,
-                                   sycl::nd_item<3> item_ct1,
-                                   struct G4HepEmElectronManager *electronManager,
-                                   struct G4HepEmParameters g4HepEmPars,
-                                   struct G4HepEmData g4HepEmData);
+                                   sycl::nd_item<3> item_ct1
+                                  //  ,
+                                  //  struct G4HepEmElectronManager *electronManager,
+                                  //  struct G4HepEmParameters g4HepEmPars,
+                                  //  struct G4HepEmData g4HepEmData
+                                   );
 extern template void TransportElectrons</*IsElectron*/true>(
     Track *electrons, const adept::MParray *active, Secondaries secondaries, adept::MParray *activeQueue,
     adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1);
