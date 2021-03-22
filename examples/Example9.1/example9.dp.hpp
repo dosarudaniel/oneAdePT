@@ -133,17 +133,17 @@ struct Secondaries {
 void RelocateToNextVolume(Track *allTracks, const adept::MParray *relocateQueue);
 
 template <bool IsElectron>
-void TransportElectrons(Track *electrons, const adept::MParray *active, Secondaries secondaries,
+SYCL_EXTERNAL void TransportElectrons(Track *electrons, const adept::MParray *active, Secondaries secondaries,
                                    adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring,
                                    sycl::nd_item<3> item_ct1);
 extern template void TransportElectrons</*IsElectron*/true>(
     Track *electrons, const adept::MParray *active, Secondaries secondaries, adept::MParray *activeQueue,
     adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1);
-extern template void TransportElectrons</*IsElectron*/false>(
+extern  template void TransportElectrons</*IsElectron*/false>(
     Track *electrons, const adept::MParray *active, Secondaries secondaries, adept::MParray *activeQueue,
     adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1);
 
-void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries secondaries,
+SYCL_EXTERNAL void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries secondaries,
 		     adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1);
 
 // Constant data structures from G4HepEm accessed by the kernels.
