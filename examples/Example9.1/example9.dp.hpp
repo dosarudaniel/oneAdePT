@@ -56,6 +56,22 @@ struct Track {
     this->currentState = parent.currentState;
     this->nextState    = parent.nextState;
   }
+
+  // default constructor
+  Track() {}
+
+  // Copy constructor
+  Track(const Track &track) {
+    rngState = track.rngState;
+    energy = track.energy;
+    for (int i = 0; i < 3; i++) {
+      numIALeft[i] = track.numIALeft[i];
+    }
+    pos = track.pos;
+    dir = track.dir;
+    currentState = track.currentState;
+    nextState = track.nextState;
+  }
 };
 
 class RanluxppDoubleEngine : public G4HepEmRandomEngine {

@@ -143,6 +143,20 @@ struct ParticleType {
 
     NumParticleTypes,
   };
+
+
+  // default constructor
+  ParticleType() {}
+
+  // Copy constructor
+  ParticleType(const ParticleType &particleType) {
+    tracks = particleType.tracks;
+    slotManager = particleType.slotManager;
+    queues = particleType.queues;
+    stream = particleType.stream;
+    event = particleType.event;
+    event_ct1 = particleType.event_ct1;
+  }
 };
 
 // A bundle of queues for the three particle types.
