@@ -215,7 +215,8 @@ public:
     // Make an instance of the class which allocates the node array. To be
     // released using ReleaseInstance.
     size_t needed = SizeOf(nvalues);
-    char *ptr     = new char[needed];
+    char *ptr = (char *)malloc(needed);
+    //char *ptr     = new char[needed];
     if (!ptr) return 0;
     assert((((unsigned long long)ptr) % alignof(Cont)) == 0 && "alignment error");
     Cont *obj                         = new (ptr) Cont(nvalues, params...);
@@ -246,7 +247,8 @@ public:
     // Make a copy of the variable size array and its container.
 
     size_t needed = SizeOf(other.GetVariableData().fN);
-    char *ptr     = new char[needed];
+    //char *ptr     = new char[needed];
+    char *ptr = (char *)malloc(needed);
     if (!ptr) return 0;
     Cont *copy    = new (ptr) Cont(other);
     copy->GetVariableData().fSelfAlloc = true;
@@ -260,7 +262,8 @@ public:
     // a new_size of the content.
 
     size_t needed = SizeOf(new_size);
-    char *ptr     = new char[needed];
+    //char *ptr     = new char[needed];
+    char *ptr = (char *)malloc(needed);
     if (!ptr) return 0;
     Cont *copy    = new (ptr) Cont(new_size, other);
     copy->GetVariableData().fSelfAlloc = true;
@@ -301,7 +304,8 @@ public:
   {
     // Releases the space allocated for the object
     obj->~Cont();
-    if (obj->GetVariableData().fSelfAlloc) delete[](char *) obj;
+    //if (obj->GetVariableData().fSelfAlloc) delete[](char *) obj;
+    if (obj->GetVariableData().fSelfAlloc) free(obj);
   }
 
   // Equivalent of sizeof function (not taking into account padding for alignment)
