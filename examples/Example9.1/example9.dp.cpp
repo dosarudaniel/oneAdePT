@@ -159,7 +159,7 @@ void InitParticleQueues(ParticleQueues queues, size_t Capacity)
 }
 
 // Kernel function to initialize a set of primary particles.
-void InitPrimaries(ParticleGenerator generator, int particles, double energy,
+SYCL_EXTERNAL void InitPrimaries(ParticleGenerator generator, int particles, double energy,
 		   const vecgeom::VPlacedVolume *world,
                               sycl::nd_item<3> item_ct1)
 {
@@ -199,7 +199,7 @@ void FinishIteration(AllParticleQueues all, const GlobalScoring *scoring, Stats 
   }
 }
 
-void example9(const vecgeom::cxx::VPlacedVolume *world, int numParticles, double energy)
+void example9(const vecgeom::VPlacedVolume *world, int numParticles, double energy)
 {
   sycl::default_selector device_selector;
 
@@ -210,7 +210,7 @@ void example9(const vecgeom::cxx::VPlacedVolume *world, int numParticles, double
   
   dpct::device_ext &dev_ct1 = dpct::get_current_device();
 
-  auto &cudaManager = vecgeom::cxx::CudaManager::Instance();
+  auto &cudaManager = vecgeom::CudaManager::Instance();
   cudaManager.LoadGeometry(world);
   cudaManager.Synchronize();
 

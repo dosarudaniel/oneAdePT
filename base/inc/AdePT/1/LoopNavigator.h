@@ -19,6 +19,12 @@
 #include <VecGeom/backend/cuda/Interface.h>
 #endif
 
+/*
+SYCL_EXTERNAL void  UnplacedContains(vecgeom::Vector3D<Precision> const &localPoint);
+SYCL_EXTERNAL void  Contains(vecgeom::Vector3D<Precision> const &point, vecgeom::Vector3D<Precision> &localPoint);
+SYCL_EXTERNAL void  GetNavIndex();
+*/
+
 inline namespace COPCORE_IMPL {
 
 class LoopNavigator {

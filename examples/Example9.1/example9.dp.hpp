@@ -4,6 +4,8 @@
 #ifndef EXAMPLE9_CUH
 #define EXAMPLE9_CUH
 
+#include "example9.h"
+
 #include <CL/sycl.hpp>
 #include <dpct/dpct.hpp>
 #include <AdePT/1/MParray.h>

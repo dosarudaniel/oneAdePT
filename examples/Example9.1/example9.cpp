@@ -100,6 +100,7 @@ int main(int argc, char *argv[])
 #endif
 
   const vecgeom::VPlacedVolume *world = vecgeom::GeoManager::Instance().GetWorld();
+  //const VPlacedVolume *world = GeoManager::Instance().GetWorld();
   if (!world) return 4;
 
   example9(world, particles, energy);
