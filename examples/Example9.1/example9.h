@@ -5,7 +5,7 @@
 #define EXAMPLE9_H
 
 #include "Cuda.h"
-#include "PlacedVolume.h"
+
 /*
 #ifdef __SYCL_DEVICE_ONLY__
   #define __constant__
