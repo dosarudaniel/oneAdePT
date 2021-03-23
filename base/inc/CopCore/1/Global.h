@@ -9,7 +9,6 @@
 #ifndef COPCORE_1GLOBAL_H_
 #define COPCORE_1GLOBAL_H_
 
-#define DPCT_USM_LEVEL_NONE
 #include <CL/sycl.hpp>
 #include <dpct/dpct.hpp>
 #include <cstdio>

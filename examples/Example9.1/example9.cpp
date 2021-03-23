@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2021 CERN
 // SPDX-License-Identifier: Apache-2.0
 
+#include <AdePT/1/test_header.h>
 #include "example9.h"
 
 #include <AdePT/1/ArgParser.h>
@@ -99,7 +100,14 @@ int main(int argc, char *argv[])
   if (!load) return 3;
 #endif
 
+
+#ifdef __SYCL_DEVICE_ONLY__
   const vecgeom::VPlacedVolume *world = vecgeom::GeoManager::Instance().GetWorld();
+#else
+  const vecgeom::cxx::VPlacedVolume *world = vecgeom::GeoManager::Instance().GetWorld();
+#endif
+
+  //const vecgeom::VPlacedVolume *world = vecgeom::GeoManager::Instance().GetWorld();
   if (!world) return 4;
 
   example9(world, particles, energy);

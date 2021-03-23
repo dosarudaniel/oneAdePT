@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2021 CERN
 // SPDX-License-Identifier: Apache-2.0
 
+#include <AdePT/1/test_header.h>
 #include <CL/sycl.hpp>
 #include <dpct/dpct.hpp>
 #include "example9.dp.hpp"

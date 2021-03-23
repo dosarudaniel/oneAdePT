@@ -11,6 +11,7 @@
 
 #include <CopCore/1/Global.h>
 
+#include "test_header.h"
 #include <VecGeom/base/Global.h>
 #include <VecGeom/base/Vector3D.h>
 #include <VecGeom/navigation/NavStateIndex.h>

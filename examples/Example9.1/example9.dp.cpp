@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2021 CERN
 // SPDX-License-Identifier: Apache-2.0
 
+
+#include <AdePT/1/test_header.h>
 #include <CL/sycl.hpp>
 #include <dpct/dpct.hpp>
 #include "example9.h"
@@ -160,8 +162,7 @@ void InitParticleQueues(ParticleQueues queues, size_t Capacity)
 
 // Kernel function to initialize a set of primary particles.
 void InitPrimaries(ParticleGenerator generator, int particles, double energy,
-		   const vecgeom::VPlacedVolume *world,
-                              sycl::nd_item<3> item_ct1)
+		   const vecgeom::VPlacedVolume *world, sycl::nd_item<3> item_ct1)
 {
   for (int i = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
                item_ct1.get_local_id(2);
