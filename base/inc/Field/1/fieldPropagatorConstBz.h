@@ -111,7 +111,7 @@ __host__ __device__ double fieldPropagatorConstBz::ComputeStepAndPropagatedState
     do {
       vecgeom::Vector3D<double> endPosition  = position;
       vecgeom::Vector3D<double> endDirection = direction;
-      double safeMove                        = min(remains, safeLength);
+      double safeMove                        = std::min(remains, safeLength);
 
       // fieldPropagatorConstBz( aTrack, BzValue, endPosition, endDirection ); -- Doesn't work
       helixBz.DoStep(position, direction, charge, momentumMag, safeMove, endPosition, endDirection);

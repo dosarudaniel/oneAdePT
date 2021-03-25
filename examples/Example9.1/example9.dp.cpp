@@ -35,8 +35,8 @@
 
 // Constant data structures from G4HepEm accessed by the kernels.
 // (defined in example9.cu)
-//dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
-//dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
+dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
+dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
 
 struct G4HepEmState {
   G4HepEmData data;
@@ -177,7 +177,7 @@ SYCL_EXTERNAL void InitPrimaries(ParticleGenerator generator, int particles, dou
 
     track.pos = {0, 0, 0};
     track.dir = {1.0, 0, 0};
-    LoopNavigator::LocatePointIn(world, track.pos, track.currentState, true);
+    //LoopNavigator::LocatePointIn(world, track.pos, track.currentState, true);
     // nextState is initialized as needed.
   }
 }
@@ -210,12 +210,15 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
   
   dpct::device_ext &dev_ct1 = dpct::get_current_device();
 
+#ifdef __SYCL_DEVICE_ONLY__
   auto &cudaManager = vecgeom::CudaManager::Instance();
   cudaManager.LoadGeometry(world);
   cudaManager.Synchronize();
-
   const vecgeom::cuda::VPlacedVolume *world_dev = cudaManager.world_gpu();
-
+#else
+  const vecgeom::VPlacedVolume *world_dev = world;
+#endif
+  
   G4HepEmState *state = InitG4HepEm();
 
   // Capacity of the different containers aka the maximum number of particles.
@@ -420,6 +423,9 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
                                        relocate, 
                                        scoring, 
                                        item_ct1);
+//                                       &electronManager,
+//                                       &g4HepEmPars,
+//				       &g4HepEmData);
             });
       });
       /*
@@ -471,7 +477,11 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
                                         pRelocate,
                                         scoring,
                                         item_ct1);
-            });
+//                                        &electronManager,
+//                                        &g4HepEmPars,
+// 				        &g4HepEmData);
+
+	    });
       });
       /*
       RelocateToNextVolume<<<relocateBlocks, RelocateThreads, 0, positrons.stream>>>(positrons.tracks,
@@ -521,6 +531,9 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
                               gRelocate,
                               scoring,
                               item_ct1);
+//                              &electronManager,
+//                              &g4HepEmPars,
+//	                      &g4HepEmData);
             });
       });
       /*

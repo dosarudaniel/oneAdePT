@@ -29,11 +29,8 @@ dpct::global_memory<struct G4HepEmElectronManager, 0> electronManager;
 // generate secondaries.
 template <bool IsElectron>
 void TransportElectrons(Track *electrons, const adept::MParray *active, Secondaries secondaries,
-                                   adept::MParray *activeQueue , adept::MParray *relocateQueue, GlobalScoring *scoring,
-                                   sycl::nd_item<3> item_ct1,
-                                   struct G4HepEmElectronManager *electronManager,
-                                   struct G4HepEmParameters g4HepEmPars,
-                                   struct G4HepEmData g4HepEmData)
+                        adept::MParray *activeQueue , adept::MParray *relocateQueue, GlobalScoring *scoring,
+			                  sycl::nd_item<3> item_ct1)
 {
   constexpr int Charge  = IsElectron ? -1 : 1;
   constexpr double Mass = copcore::units::kElectronMassC2;
@@ -258,15 +255,13 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 }
 
 // Instantiate template for electrons and positrons.
-template void TransportElectrons</*IsElectron*/ true>(Track *electrons, const adept::MParray *active,
-                                                                 Secondaries secondaries, adept::MParray *activeQueue,
-						                 adept::MParray *relocateQueue, GlobalScoring *scoring,
-                                                                 sycl::nd_item<3> item_ct1
-						      );
+template void TransportElectrons<true>(Track *electrons, const adept::MParray *active,
+               Secondaries secondaries, adept::MParray *activeQueue,
+				       adept::MParray *relocateQueue, GlobalScoring *scoring,
+				       sycl::nd_item<3> item_ct1);
 
-template void TransportElectrons</*IsElectron*/ false>(Track *electrons, const adept::MParray *active,
-                                                                  Secondaries secondaries, adept::MParray *activeQueue,
-                                                                  adept::MParray *relocateQueue,
-						                  GlobalScoring *scoring,
-                                                                  sycl::nd_item<3> item_ct1
-						       );
+template void TransportElectrons<false>(Track *electrons, const adept::MParray *active,
+              Secondaries secondaries, adept::MParray *activeQueue,
+              adept::MParray *relocateQueue,GlobalScoring *scoring,
+              sycl::nd_item<3> item_ct1);
+

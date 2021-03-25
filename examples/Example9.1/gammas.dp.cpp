@@ -22,11 +22,8 @@ dpct::global_memory<struct G4HepEmGammaManager, 0> gammaManager;
 constexpr double kPush = 1.e-8 * copcore::units::cm;
 
 void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries secondaries,
-                                adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring,
-                                sycl::nd_item<3> item_ct1,
-                                struct G4HepEmGammaManager *gammaManager,
-                                struct G4HepEmParameters g4HepEmPars,
-                                struct G4HepEmData g4HepEmData)
+                     adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring,
+		     sycl::nd_item<3> item_ct1)
 {
   int activeSize = active->size();
   for (int i = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
