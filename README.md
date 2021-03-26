@@ -17,7 +17,7 @@ Step 3 To compile:
 `make`   
    
 Step 4 To run test1:   
-`SYCL_DEVICE_FILTER=PI_LEVEL_ZERO ./test1`  
+`SYCL_DEVICE_FILTER=PI_LEVEL_ZERO ./tests/test1`  
 or    
-`SYCL_DEVICE_FILTER=PI_CUDA ./test1`  
+`SYCL_DEVICE_FILTER=PI_CUDA ./tests/test1`  
 
