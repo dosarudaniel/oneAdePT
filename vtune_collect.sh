@@ -24,7 +24,8 @@ type=gpu-hotspots
 rm -r vtune_data
 
 echo "Vtune Collect $type"
-vtune -collect $type -result-dir vtune_data $(pwd)/test7
+# TODO : complete the executable path;
+vtune -collect $type -result-dir vtune_data $(pwd)/debug/test7
 
 echo "Vtune Summary Report"
 vtune -report summary -result-dir vtune_data -format html -report-output $(pwd)/summary.html
