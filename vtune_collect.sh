@@ -25,7 +25,7 @@ rm -r vtune_data
 
 echo "Vtune Collect $type"
 # TODO : complete the executable path;
-vtune -collect $type -result-dir vtune_data $(pwd)/debug/test7
+vtune -collect $type -result-dir vtune_data $(pwd)/tests/debug/test7
 
 echo "Vtune Summary Report"
 vtune -report summary -result-dir vtune_data -format html -report-output $(pwd)/summary.html
