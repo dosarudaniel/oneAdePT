@@ -23,9 +23,14 @@
 // Constant data structures from G4HepEm accessed by the kernels.
 // (defined in example9.cu)
 
-extern dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
-extern dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
-extern dpct::global_memory<struct G4HepEmElectronManager, 0> electronManager;
+//extern dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
+//extern dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
+
+//extern dpct::global_memory<struct G4HepEmElectronManager, 0> electronManager;
+
+extern struct G4HepEmElectronManager electronManager;
+extern struct G4HepEmParameters g4HepEmPars;
+extern struct G4HepEmData g4HepEmData;
 
 // A data structure to represent a particle track. The particle type is implicit
 // by the queue and not stored in memory.

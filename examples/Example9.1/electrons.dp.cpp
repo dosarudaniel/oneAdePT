@@ -22,7 +22,7 @@
 #include <G4HepEmElectronInteractionIoni.icc>
 #include <G4HepEmPositronInteractionAnnihilation.icc>
 
-dpct::global_memory<struct G4HepEmElectronManager, 0> electronManager;
+struct G4HepEmElectronManager electronManager;
 
 // Compute the physics and geometry step limit, transport the electrons while
 // applying the continuous effects and maybe a discrete process that could
@@ -69,7 +69,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
     }
 
     // Call G4HepEm to compute the physics step limit.
-    electronManager->HowFar(&g4HepEmData, &g4HepEmPars, &elTrack);
+    electronManager.HowFar(&g4HepEmData, &g4HepEmPars, &elTrack);
 
     // Get result into variables.
     double geometricalStepLengthFromPhysics = theTrack->GetGStepLength();
@@ -93,7 +93,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
     }
 
     // Apply continuous effects.
-    bool stopped = electronManager->PerformContinuous(&g4HepEmData,
+    bool stopped = electronManager.PerformContinuous(&g4HepEmData,
                                                       &g4HepEmPars, &elTrack);
     // Collect the changes.
     currentTrack.energy = theTrack->GetEKin();
@@ -164,7 +164,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
     currentTrack.numIALeft[winnerProcessIndex] = -1.0;
 
     // Check if a delta interaction happens instead of the real discrete process.
-    if (electronManager->CheckDelta(&g4HepEmData, theTrack,
+    if (electronManager.CheckDelta(&g4HepEmData, theTrack,
                                     currentTrack.Uniform())) {
       // A delta interaction happened, move on.
       activeQueue->push_back(slot);

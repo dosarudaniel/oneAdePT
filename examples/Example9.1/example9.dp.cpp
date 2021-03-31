@@ -20,6 +20,8 @@
 #include <VecGeom/backend/cuda/Interface.h>
 #endif
 
+#include <G4HepEmElectronManager.hh>
+
 #include <G4HepEmData.hh>
 #include <G4HepEmElectronInit.hh>
 #include <G4HepEmGammaInit.hh>
@@ -35,8 +37,12 @@
 
 // Constant data structures from G4HepEm accessed by the kernels.
 // (defined in example9.cu)
-dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
-dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
+
+//dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
+//dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
+
+struct G4HepEmParameters g4HepEmPars;
+struct G4HepEmData g4HepEmData;
 
 struct G4HepEmState {
   G4HepEmData data;
@@ -55,6 +61,8 @@ static G4HepEmState *InitG4HepEm()
 
   dpct::device_ext &dev_ct1 = dpct::get_current_device();
 
+  //electronManager = sycl::malloc_shared<G4HepEmElectronManager>(1, q_ct1);
+
   G4HepEmState *state = new G4HepEmState;
   InitG4HepEmData(&state->data);
   InitHepEmParameters(&state->parameters);
@@ -69,6 +77,7 @@ static G4HepEmState *InitG4HepEm()
   std::cout << "fNumG4MatCuts = " << cutData->fNumG4MatCuts << ", fNumMatCutData = " << cutData->fNumMatCutData
             << std::endl;
 
+#if (defined( __SYCL_DEVICE_ONLY__))
   // Copy to GPU.
   CopyG4HepEmDataToGPU(&state->data);
   /*
@@ -107,6 +116,7 @@ static G4HepEmState *InitG4HepEm()
       (q_ct1.memcpy(g4HepEmData.get_ptr(), &dataOnDevice, sizeof(G4HepEmData))
            .wait(),
        0));
+#endif
 
   return state;
 }
@@ -177,7 +187,7 @@ SYCL_EXTERNAL void InitPrimaries(ParticleGenerator generator, int particles, dou
 
     track.pos = {0, 0, 0};
     track.dir = {1.0, 0, 0};
-    //LoopNavigator::LocatePointIn(world, track.pos, track.currentState, true);
+    LoopNavigator::LocatePointIn(world, track.pos, track.currentState, true);
     // nextState is initialized as needed.
   }
 }
@@ -217,6 +227,7 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
   const vecgeom::cuda::VPlacedVolume *world_dev = cudaManager.world_gpu();
 #else
   const vecgeom::VPlacedVolume *world_dev = world;
+
 #endif
   
   G4HepEmState *state = InitG4HepEm();

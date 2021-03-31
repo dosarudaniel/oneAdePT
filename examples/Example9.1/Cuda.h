@@ -14,6 +14,7 @@
 #endif                                                                                                                                          
 
 #if (defined( __SYCL_DEVICE_ONLY__))
+  #define G4HepEm_CUDA_BUILD 1
   #define VECCORE_CUDA_DEVICE_COMPILATION
   #define VECGEOM_DEVICE_COMPILATION
   #define VECGEOM_IMPL_NAMESPACE cuda
@@ -40,6 +41,7 @@
   #undef VECGEOM_GEANT4
   #undef VECGEOM_BENCHMARK
 #else
+  #undef G4HepEm_CUDA_BUILD
   // Not compiling with NVCC
   #define VECGEOM_IMPL_NAMESPACE cxx
   #define VECGEOM_NAMESPACE ::vecgeom

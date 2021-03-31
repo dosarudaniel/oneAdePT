@@ -6,8 +6,12 @@
  * @brief Navigation methods for geometry.
  */
 
-#ifndef RT_LOOP_NAVIGATOR_H_
-#define RT_LOOP_NAVIGATOR_H_
+#ifndef RT_1LOOP_NAVIGATOR_H_
+#define RT_1LOOP_NAVIGATOR_H_
+
+SYCL_EXTERNAL void  UnplacedContains(vecgeom::Vector3D<Precision> const &localPoint);
+SYCL_EXTERNAL void  Contains(vecgeom::Vector3D<Precision> const &point, vecgeom::Vector3D<Precision> &localPoint);
+SYCL_EXTERNAL void  GetNavIndex();
 
 #include <CopCore/1/Global.h>
 
@@ -18,12 +22,6 @@
 #ifdef VECGEOM_ENABLE_CUDA
 #include <VecGeom/backend/cuda/Interface.h>
 #endif
-
-/*
-SYCL_EXTERNAL void  UnplacedContains(vecgeom::Vector3D<Precision> const &localPoint);
-SYCL_EXTERNAL void  Contains(vecgeom::Vector3D<Precision> const &point, vecgeom::Vector3D<Precision> &localPoint);
-SYCL_EXTERNAL void  GetNavIndex();
-*/
 
 inline namespace COPCORE_IMPL {
 
@@ -39,7 +37,7 @@ public:
   {
     if (top) {
       assert(vol != nullptr);
-      if (!vol->UnplacedContains(point)) return nullptr;
+      if (!vol->vecgeom::VPlacedVolume::UnplacedContains(point)) return nullptr;
     }
 
     VPlacedVolumePtr_t currentvolume = vol;
@@ -51,7 +49,7 @@ public:
       godeeper = false;
       for (auto *daughter : currentvolume->GetDaughters()) {
         vecgeom::Vector3D<vecgeom::Precision> transformedpoint;
-        if (daughter->Contains(currentpoint, transformedpoint)) {
+        if (daughter->vecgeom::VPlacedVolume::Contains(currentpoint, transformedpoint)) {
           path.Push(daughter);
           currentpoint  = transformedpoint;
           currentvolume = daughter;
@@ -74,7 +72,7 @@ public:
       path.Pop();
       transformed   = currentmother->GetTransformation()->InverseTransform(transformed);
       currentmother = path.Top();
-    } while (currentmother && (currentmother->IsAssembly() || !currentmother->UnplacedContains(transformed)));
+    } while (currentmother && (currentmother->IsAssembly() || !currentmother->vecgeom::VPlacedVolume::UnplacedContains(transformed)));
 
     if (currentmother) {
       path.Pop();
@@ -99,12 +97,12 @@ private:
     VPlacedVolumePtr_t pvol         = in_state.Top();
 
     // need to calc DistanceToOut first
-    step = pvol->DistanceToOut(localpoint, localdir, step_limit);
+    step = pvol->vecgeom::VPlacedVolume::DistanceToOut(localpoint, localdir, step_limit);
 
     if (step < 0) step = 0;
 
     for (auto *daughter : pvol->GetDaughters()) {
-      double ddistance = daughter->DistanceToIn(localpoint, localdir, step);
+      double ddistance = daughter->vecgeom::VPlacedVolume::DistanceToIn(localpoint, localdir, step);
 
       // if distance is negative; we are inside that daughter and should relocate
       // unless distance is minus infinity
@@ -240,7 +238,7 @@ public:
 
     VPlacedVolumePtr_t pvol = state.Top();
 
-    if (!pvol->UnplacedContains(localpoint)) {
+    if (!pvol->vecgeom::VPlacedVolume::UnplacedContains(localpoint)) {
       RelocatePoint(localpoint, state);
     } else {
       state.Pop();
@@ -257,4 +255,4 @@ public:
 };
 
 } // End namespace COPCORE_IMPL
-#endif // RT_LOOP_NAVIGATOR_H_
+#endif // RT_1LOOP_NAVIGATOR_H_
