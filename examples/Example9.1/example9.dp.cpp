@@ -38,31 +38,15 @@
 // Constant data structures from G4HepEm accessed by the kernels.
 // (defined in example9.cu)
 
-//dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
-//dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
-
-struct G4HepEmParameters g4HepEmPars;
-struct G4HepEmData g4HepEmData;
+extern SYCL_EXTERNAL void CopyG4HepEmDataToGPU(struct G4HepEmData* onCPU); 
 
 struct G4HepEmState {
   G4HepEmData data;
   G4HepEmParameters parameters;
 };
 
-static G4HepEmState *InitG4HepEm()
+static G4HepEmState *InitG4HepEm(sycl::queue q_ct1)
 {
-  sycl::default_selector device_selector;
-
-  sycl::queue q_ct1(device_selector);
-
-  std::cout <<  "Running on "
-	    << q_ct1.get_device().get_info<cl::sycl::info::device::name>()
-	    << "\n";
-
-  dpct::device_ext &dev_ct1 = dpct::get_current_device();
-
-  //electronManager = sycl::malloc_shared<G4HepEmElectronManager>(1, q_ct1);
-
   G4HepEmState *state = new G4HepEmState;
   InitG4HepEmData(&state->data);
   InitHepEmParameters(&state->parameters);
@@ -77,7 +61,6 @@ static G4HepEmState *InitG4HepEm()
   std::cout << "fNumG4MatCuts = " << cutData->fNumG4MatCuts << ", fNumMatCutData = " << cutData->fNumMatCutData
             << std::endl;
 
-#if (defined( __SYCL_DEVICE_ONLY__))
   // Copy to GPU.
   CopyG4HepEmDataToGPU(&state->data);
   /*
@@ -85,13 +68,14 @@ static G4HepEmState *InitG4HepEm()
   may need to rewrite this code.
   */
   COPCORE_CUDA_CHECK((q_ct1
-                          .memcpy(g4HepEmPars.get_ptr(), &state->parameters,
+                          .memcpy(g_g4HepEmPars.get_ptr(), &state->parameters,
                                   sizeof(G4HepEmParameters))
                           .wait(),
                       0));
 
   // Create G4HepEmData with the device pointers.
   G4HepEmData dataOnDevice;
+#ifdef __SYCL_DEVICE_ONLY__
   dataOnDevice.fTheMatCutData   = state->data.fTheMatCutData_gpu;
   dataOnDevice.fTheMaterialData = state->data.fTheMaterialData_gpu;
   dataOnDevice.fTheElementData  = state->data.fTheElementData_gpu;
@@ -107,16 +91,31 @@ static G4HepEmState *InitG4HepEm()
   dataOnDevice.fThePositronData_gpu = nullptr;
   dataOnDevice.fTheSBTableData_gpu  = nullptr;
   dataOnDevice.fTheGammaData_gpu    = nullptr;
-
+#else
+  dataOnDevice.fTheMatCutData   = state->data.fTheMatCutData;
+  dataOnDevice.fTheMaterialData = state->data.fTheMaterialData;
+  dataOnDevice.fTheElementData  = state->data.fTheElementData;
+  dataOnDevice.fTheElectronData = state->data.fTheElectronData;
+  dataOnDevice.fThePositronData = state->data.fThePositronData;
+  dataOnDevice.fTheSBTableData  = state->data.fTheSBTableData;
+  dataOnDevice.fTheGammaData    = state->data.fTheGammaData;
+  // The other pointers should never be used.
+  dataOnDevice.fTheMatCutData   = nullptr;
+  dataOnDevice.fTheMaterialData = nullptr;
+  dataOnDevice.fTheElementData  = nullptr;
+  dataOnDevice.fTheElectronData = nullptr;
+  dataOnDevice.fThePositronData = nullptr;
+  dataOnDevice.fTheSBTableData  = nullptr;
+  dataOnDevice.fTheGammaData   = nullptr;
+ #endif
   /*
   DPCT1003:1: Migrated API does not return error code. (*, 0) is inserted. You
   may need to rewrite this code.
   */
   COPCORE_CUDA_CHECK(
-      (q_ct1.memcpy(g4HepEmData.get_ptr(), &dataOnDevice, sizeof(G4HepEmData))
+      (q_ct1.memcpy(g_g4HepEmData.get_ptr(), &dataOnDevice, sizeof(G4HepEmData))
            .wait(),
        0));
-#endif
 
   return state;
 }
@@ -227,10 +226,9 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
   const vecgeom::cuda::VPlacedVolume *world_dev = cudaManager.world_gpu();
 #else
   const vecgeom::VPlacedVolume *world_dev = world;
-
 #endif
   
-  G4HepEmState *state = InitG4HepEm();
+  G4HepEmState *state = InitG4HepEm(q_ct1);
 
   // Capacity of the different containers aka the maximum number of particles.
   constexpr int Capacity = 256 * 1024;
@@ -433,10 +431,10 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
                                        nextActive,
                                        relocate, 
                                        scoring, 
-                                       item_ct1);
-//                                       &electronManager,
-//                                       &g4HepEmPars,
-//				       &g4HepEmData);
+                                       item_ct1,
+                                       g_electronManager.get_ptr(),
+                                       g_g4HepEmPars.get_ptr(),
+                                       g_g4HepEmData.get_ptr());
             });
       });
       /*
@@ -487,11 +485,10 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
                                         pNextActive,
                                         pRelocate,
                                         scoring,
-                                        item_ct1);
-//                                        &electronManager,
-//                                        &g4HepEmPars,
-// 				        &g4HepEmData);
-
+                                        item_ct1,
+                                        g_electronManager.get_ptr(),
+                                        g_g4HepEmPars.get_ptr(),
+                                        g_g4HepEmData.get_ptr()); 
 	    });
       });
       /*
@@ -541,10 +538,11 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
                               gNextActive,
                               gRelocate,
                               scoring,
-                              item_ct1);
-//                              &electronManager,
-//                              &g4HepEmPars,
-//	                      &g4HepEmData);
+                              item_ct1,
+                              g_electronManager.get_ptr(),
+                              g_g4HepEmPars.get_ptr(),
+                              g_g4HepEmData.get_ptr()
+                            );
             });
       });
       /*

@@ -22,7 +22,14 @@
 #include <G4HepEmElectronInteractionIoni.icc>
 #include <G4HepEmPositronInteractionAnnihilation.icc>
 
-struct G4HepEmElectronManager electronManager;
+dpct::constant_memory<struct G4HepEmParameters, 0> g_g4HepEmPars;
+dpct::constant_memory<struct G4HepEmData, 0> g_g4HepEmData;
+dpct::global_memory<struct G4HepEmElectronManager, 0> g_electronManager;
+
+/*
+const struct G4HepEmParameters g4HepEmPars;
+const struct G4HepEmData g4HepEmData;
+*/
 
 // Compute the physics and geometry step limit, transport the electrons while
 // applying the continuous effects and maybe a discrete process that could
@@ -30,7 +37,10 @@ struct G4HepEmElectronManager electronManager;
 template <bool IsElectron>
 void TransportElectrons(Track *electrons, const adept::MParray *active, Secondaries secondaries,
                         adept::MParray *activeQueue , adept::MParray *relocateQueue, GlobalScoring *scoring,
-			                  sycl::nd_item<3> item_ct1)
+			                  sycl::nd_item<3> item_ct1,
+                        struct G4HepEmElectronManager *electronManager,
+                        struct G4HepEmParameters *g4HepEmPars,
+                        struct G4HepEmData *g4HepEmData)
 {
   constexpr int Charge  = IsElectron ? -1 : 1;
   constexpr double Mass = copcore::units::kElectronMassC2;
@@ -69,7 +79,8 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
     }
 
     // Call G4HepEm to compute the physics step limit.
-    electronManager.HowFar(&g4HepEmData, &g4HepEmPars, &elTrack);
+     //electronManager.HowFar(&g4HepEmData, &g4HepEmPars, &elTrack);
+     electronManager->HowFar(g4HepEmData, g4HepEmPars, &elTrack);
 
     // Get result into variables.
     double geometricalStepLengthFromPhysics = theTrack->GetGStepLength();
@@ -93,8 +104,8 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
     }
 
     // Apply continuous effects.
-    bool stopped = electronManager.PerformContinuous(&g4HepEmData,
-                                                      &g4HepEmPars, &elTrack);
+    bool stopped = electronManager->PerformContinuous(g4HepEmData,
+                                                      g4HepEmPars, &elTrack);
     // Collect the changes.
     currentTrack.energy = theTrack->GetEKin();
     dpct::atomic_fetch_add(&scoring->energyDeposit,
@@ -164,7 +175,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
     currentTrack.numIALeft[winnerProcessIndex] = -1.0;
 
     // Check if a delta interaction happens instead of the real discrete process.
-    if (electronManager.CheckDelta(&g4HepEmData, theTrack,
+    if (electronManager->CheckDelta(g4HepEmData, theTrack,
                                     currentTrack.Uniform())) {
       // A delta interaction happened, move on.
       activeQueue->push_back(slot);
@@ -258,10 +269,16 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 template void TransportElectrons<true>(Track *electrons, const adept::MParray *active,
                Secondaries secondaries, adept::MParray *activeQueue,
 				       adept::MParray *relocateQueue, GlobalScoring *scoring,
-				       sycl::nd_item<3> item_ct1);
+				       sycl::nd_item<3> item_ct1,
+               struct G4HepEmElectronManager *electronManager,
+               struct G4HepEmParameters *g4HepEmPars,
+               struct G4HepEmData *g4HepEmData);
 
 template void TransportElectrons<false>(Track *electrons, const adept::MParray *active,
               Secondaries secondaries, adept::MParray *activeQueue,
               adept::MParray *relocateQueue,GlobalScoring *scoring,
-              sycl::nd_item<3> item_ct1);
+              sycl::nd_item<3> item_ct1,
+              struct G4HepEmElectronManager *electronManager,
+              struct G4HepEmParameters *g4HepEmPars,
+              struct G4HepEmData *g4HepEmData;
 

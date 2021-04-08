@@ -6,6 +6,10 @@
 
 #include "example9.h"
 
+extern SYCL_EXTERNAL NavIndex_t *&vecgeom::globaldevicegeomdata::GetNavIndex();
+extern SYCL_EXTERNAL vecgeom::VPlacedVolume *&vecgeom::globaldevicegeomdata::GetCompactPlacedVolBuffer();
+extern SYCL_EXTERNAL void TopMatrixImpl(NavIndex_t nav_ind, vecgeom::Transformation3D &trans);
+
 #include <CL/sycl.hpp>
 #include <dpct/dpct.hpp>
 #include <AdePT/1/MParray.h>
@@ -23,14 +27,18 @@
 // Constant data structures from G4HepEm accessed by the kernels.
 // (defined in example9.cu)
 
-//extern dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
-//extern dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
-
-//extern dpct::global_memory<struct G4HepEmElectronManager, 0> electronManager;
-
-extern struct G4HepEmElectronManager electronManager;
-extern struct G4HepEmParameters g4HepEmPars;
-extern struct G4HepEmData g4HepEmData;
+extern dpct::constant_memory<struct G4HepEmParameters, 0> g_g4HepEmPars;
+extern dpct::constant_memory<struct G4HepEmData, 0> g_g4HepEmData;
+extern dpct::global_memory<struct G4HepEmElectronManager, 0> g_electronManager;
+/*
+dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
+dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
+*/
+/*
+extern const struct G4HepEmElectronManager *electronManager;
+extern const struct G4HepEmParameters g4HepEmPars;
+extern const struct G4HepEmData g4HepEmData;
+*/
 
 // A data structure to represent a particle track. The particle type is implicit
 // by the queue and not stored in memory.
@@ -150,20 +158,32 @@ void RelocateToNextVolume(Track *allTracks, const adept::MParray *relocateQueue)
 template <bool IsElectron>
 SYCL_EXTERNAL void TransportElectrons(Track *electrons, const adept::MParray *active, Secondaries secondaries,
    adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring,
-   sycl::nd_item<3> item_ct1);
+   sycl::nd_item<3> item_ct1,
+   struct G4HepEmElectronManager *electronManager,
+   struct G4HepEmParameters *g4HepEmPars,
+   struct G4HepEmData *g4HepEmData);
 
 extern template
 SYCL_EXTERNAL void TransportElectrons<true>(
     Track *electrons, const adept::MParray *active, Secondaries secondaries, adept::MParray *activeQueue,
-    adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1);
+    adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1,
+    struct G4HepEmElectronManager *electronManager,
+    struct G4HepEmParameters *g4HepEmPars,
+    struct G4HepEmData *g4HepEmData);
 
 extern  template
 SYCL_EXTERNAL void TransportElectrons<false>(
     Track *electrons, const adept::MParray *active, Secondaries secondaries, adept::MParray *activeQueue,
-    adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1);
+    adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1,
+    struct G4HepEmElectronManager *electronManager,
+    struct G4HepEmParameters *g4HepEmPars,
+    struct G4HepEmData *g4HepEmData);
 
 SYCL_EXTERNAL void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries secondaries,
-    adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1);
+    adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1,
+    struct G4HepEmElectronManager *electronManager,
+    struct G4HepEmParameters *g4HepEmPars,
+    struct G4HepEmData *g4HepEmData);
 
 constexpr float BzFieldValue = 0.1 * copcore::units::tesla;
 

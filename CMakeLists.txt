@@ -31,7 +31,7 @@ set(SYCL_FLAGS
   	"-stdlib=libstdc++"
         "-Wno-unknown-cuda-version")
       
-set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128" "-I${CMAKE_SOURCE_DIR}/../local/include" )
+set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128" "-DG4HepEm_CUDA_BUILD" "-I${CMAKE_SOURCE_DIR}/../local/include" )
 
 #include_directories("-I${CMAKE_SOURCE_DIR}/base/inc")
 

@@ -11,8 +11,9 @@
 #pragma message("Compiling on device.")
 #else
 #pragma message("Compiling on host.")
-#endif                                                                                                                                          
+#endif
 
+                    
 #if (defined( __SYCL_DEVICE_ONLY__))
   #define G4HepEm_CUDA_BUILD 1
   #define VECCORE_CUDA_DEVICE_COMPILATION
