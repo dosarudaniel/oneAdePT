@@ -45,7 +45,10 @@ struct G4HepEmState {
   G4HepEmParameters parameters;
 };
 
-static G4HepEmState *InitG4HepEm(sycl::queue q_ct1, struct G4HepEmElectronManager *electronManager_p)
+static G4HepEmState *InitG4HepEm(sycl::queue q_ct1, 
+                                  struct G4HepEmElectronManager *electronManager_p, 
+                                  struct G4HepEmParameters *g4HepEmPars_p,
+                                  struct G4HepEmData *g4HepEmData_p)
 {
 
   electronManager_p =  electronManager.get_ptr();
@@ -214,7 +217,10 @@ void FinishIteration(AllParticleQueues all, const GlobalScoring *scoring, Stats 
   }
 }
 
-void example9(const vecgeom::VPlacedVolume *world, int numParticles, double energy, struct G4HepEmElectronManager *electronManager_p)
+void example9(const vecgeom::VPlacedVolume *world, int numParticles, double energy, 
+              struct G4HepEmElectronManager *electronManager_p,
+              struct G4HepEmParameters *g4HepEmPars_p,
+              struct G4HepEmData *g4HepEmData_p)
 {
   sycl::default_selector device_selector;
 
@@ -234,7 +240,7 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
   const vecgeom::VPlacedVolume *world_dev = world;
 #endif
   
-  G4HepEmState *state = InitG4HepEm(q_ct1, electronManager_p);
+  G4HepEmState *state = InitG4HepEm(q_ct1, electronManager_p, g4HepEmPars_p, g4HepEmData_p);
 
   // Capacity of the different containers aka the maximum number of particles.
   constexpr int Capacity = 256 * 1024;
@@ -438,13 +444,9 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
                                        relocate, 
                                        scoring, 
                                        item_ct1,
-                                       electronManager_p
-                                       /*,
-                                       g_electronManager.get_ptr(),
-                                       g_g4HepEmPars.get_ptr(),
-                                       g_g4HepEmData.get_ptr()
-                                       */
-                                      );
+                                       electronManager_p,
+                                       g4HepEmPars_p,
+                                       g4HepEmData_p);
             });
       });
       /*
@@ -496,13 +498,9 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
                                         pRelocate,
                                         scoring,
                                         item_ct1,
-                                        electronManager_p
-                                        /*,
-                                        g_electronManager.get_ptr(),
-                                        g_g4HepEmPars.get_ptr(),
-                                        g_g4HepEmData.get_ptr()
-                                        */
-                                        ); 
+                                        electronManager_p,
+                                        g4HepEmPars_p,
+                                        g4HepEmData_p);
 	    });
       });
       /*
@@ -553,13 +551,9 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
                               gRelocate,
                               scoring,
                               item_ct1,
-                              electronManager_p
-                              /*,
-                              g_electronManager.get_ptr(),
-                              g_g4HepEmPars.get_ptr(),
-                              g_g4HepEmData.get_ptr()
-                              */
-                            );
+                              electronManager_p,
+                              g4HepEmPars_p,
+                              g4HepEmData_p);
             });
       });
       /*

@@ -85,6 +85,8 @@ int main(int argc, char *argv[])
 #endif
 
   struct G4HepEmElectronManager *electronManager_p;
+  struct G4HepEmParameters *g4HepEmPars_p;
+  struct G4HepEmData *g4HepEmData_p;
 
   OPTION_STRING(gdml_name, "trackML.gdml");
   OPTION_INT(cache_depth, 0); // 0 = full depth
@@ -105,5 +107,5 @@ int main(int argc, char *argv[])
 
   if (!world) return 4;
 
-  example9(world, particles, energy, electronManager_p);
+  example9(world, particles, energy, electronManager_p, g4HepEmPars_p, g4HepEmData_p);
 }
