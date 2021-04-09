@@ -22,14 +22,14 @@
 #include <G4HepEmElectronInteractionIoni.icc>
 #include <G4HepEmPositronInteractionAnnihilation.icc>
 
-dpct::constant_memory<struct G4HepEmParameters, 0> g_g4HepEmPars;
-dpct::constant_memory<struct G4HepEmData, 0> g_g4HepEmData;
-dpct::global_memory<struct G4HepEmElectronManager, 0> g_electronManager;
+dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
+struct G4HepEmParameters *g4HepEmPars_p;
 
-/*
-const struct G4HepEmParameters g4HepEmPars;
-const struct G4HepEmData g4HepEmData;
-*/
+dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
+struct G4HepEmData *g4HepEmData_p;
+
+dpct::global_memory<struct G4HepEmElectronManager, 0> electronManager;
+struct G4HepEmElectronManager  *electronManager_p;
 
 // Compute the physics and geometry step limit, transport the electrons while
 // applying the continuous effects and maybe a discrete process that could
@@ -37,15 +37,17 @@ const struct G4HepEmData g4HepEmData;
 template <bool IsElectron>
 void TransportElectrons(Track *electrons, const adept::MParray *active, Secondaries secondaries,
                         adept::MParray *activeQueue , adept::MParray *relocateQueue, GlobalScoring *scoring,
-			                  sycl::nd_item<3> item_ct1,
+			                  sycl::nd_item<3> item_ct1
+                        /*,
                         struct G4HepEmElectronManager *electronManager,
                         struct G4HepEmParameters *g4HepEmPars,
-                        struct G4HepEmData *g4HepEmData)
+                        struct G4HepEmData *g4HepEmData
+                        */)
 {
   constexpr int Charge  = IsElectron ? -1 : 1;
   constexpr double Mass = copcore::units::kElectronMassC2;
   fieldPropagatorConstBz fieldPropagatorBz(BzFieldValue);
-
+ 
   int activeSize = active->size();
   for (int i = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
                item_ct1.get_local_id(2);
@@ -80,7 +82,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 
     // Call G4HepEm to compute the physics step limit.
      //electronManager.HowFar(&g4HepEmData, &g4HepEmPars, &elTrack);
-     electronManager->HowFar(g4HepEmData, g4HepEmPars, &elTrack);
+     electronManager_p->HowFar(g4HepEmData_p, g4HepEmPars_p, &elTrack);
 
     // Get result into variables.
     double geometricalStepLengthFromPhysics = theTrack->GetGStepLength();
@@ -104,8 +106,8 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
     }
 
     // Apply continuous effects.
-    bool stopped = electronManager->PerformContinuous(g4HepEmData,
-                                                      g4HepEmPars, &elTrack);
+    bool stopped = electronManager_p->PerformContinuous(g4HepEmData_p,
+                                                      g4HepEmPars_p, &elTrack);
     // Collect the changes.
     currentTrack.energy = theTrack->GetEKin();
     dpct::atomic_fetch_add(&scoring->energyDeposit,
@@ -175,7 +177,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
     currentTrack.numIALeft[winnerProcessIndex] = -1.0;
 
     // Check if a delta interaction happens instead of the real discrete process.
-    if (electronManager->CheckDelta(g4HepEmData, theTrack,
+    if (electronManager_p->CheckDelta(g4HepEmData_p, theTrack,
                                     currentTrack.Uniform())) {
       // A delta interaction happened, move on.
       activeQueue->push_back(slot);
@@ -186,7 +188,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
     RanluxppDoubleEngine rnge(&currentTrack.rngState);
 
     const double energy   = currentTrack.energy;
-    const double theElCut = g4HepEmData.fTheMatCutData->fMatCutData[theMCIndex].fSecElProdCutE;
+    const double theElCut = g4HepEmData_p->fTheMatCutData->fMatCutData[theMCIndex].fSecElProdCutE;
 
     switch (winnerProcessIndex) {
     case 0: {
@@ -215,9 +217,9 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
     case 1: {
       // Invoke model for Bremsstrahlung: either SB- or Rel-Brem.
       double logEnergy = sycl::log((double)energy);
-      double deltaEkin = energy < g4HepEmPars.fElectronBremModelLim
-                             ? SampleETransferBremSB(&g4HepEmData, energy, logEnergy, theMCIndex, &rnge, IsElectron)
-                             : SampleETransferBremRB(&g4HepEmData, energy, logEnergy, theMCIndex, &rnge, IsElectron);
+      double deltaEkin = energy < g4HepEmPars_p->fElectronBremModelLim
+                             ? SampleETransferBremSB(g4HepEmData_p, energy, logEnergy, theMCIndex, &rnge, IsElectron)
+                             : SampleETransferBremRB(g4HepEmData_p, energy, logEnergy, theMCIndex, &rnge, IsElectron);
 
       double dirPrimary[] = {currentTrack.dir.x(), currentTrack.dir.y(), currentTrack.dir.z()};
       double dirSecondary[3];
@@ -269,16 +271,21 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 template void TransportElectrons<true>(Track *electrons, const adept::MParray *active,
                Secondaries secondaries, adept::MParray *activeQueue,
 				       adept::MParray *relocateQueue, GlobalScoring *scoring,
-				       sycl::nd_item<3> item_ct1,
+				       sycl::nd_item<3> item_ct1
+               /*,
                struct G4HepEmElectronManager *electronManager,
                struct G4HepEmParameters *g4HepEmPars,
-               struct G4HepEmData *g4HepEmData);
+               struct G4HepEmData *g4HepEmData
+               */
+              );
 
 template void TransportElectrons<false>(Track *electrons, const adept::MParray *active,
               Secondaries secondaries, adept::MParray *activeQueue,
               adept::MParray *relocateQueue,GlobalScoring *scoring,
-              sycl::nd_item<3> item_ct1,
+              sycl::nd_item<3> item_ct1
+              /*,
               struct G4HepEmElectronManager *electronManager,
               struct G4HepEmParameters *g4HepEmPars,
               struct G4HepEmData *g4HepEmData;
-
+              */ 
+            );

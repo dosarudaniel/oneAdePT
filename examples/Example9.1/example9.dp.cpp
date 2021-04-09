@@ -47,6 +47,12 @@ struct G4HepEmState {
 
 static G4HepEmState *InitG4HepEm(sycl::queue q_ct1)
 {
+
+  electronManager_p =  electronManager.get_ptr();
+  
+  g4HepEmPars_p =  g4HepEmPars.get_ptr();
+  g4HepEmData_p = g4HepEmData.get_ptr();
+
   G4HepEmState *state = new G4HepEmState;
   InitG4HepEmData(&state->data);
   InitHepEmParameters(&state->parameters);
@@ -68,7 +74,7 @@ static G4HepEmState *InitG4HepEm(sycl::queue q_ct1)
   may need to rewrite this code.
   */
   COPCORE_CUDA_CHECK((q_ct1
-                          .memcpy(g_g4HepEmPars.get_ptr(), &state->parameters,
+                          .memcpy(g4HepEmPars.get_ptr(), &state->parameters,
                                   sizeof(G4HepEmParameters))
                           .wait(),
                       0));
@@ -113,7 +119,7 @@ static G4HepEmState *InitG4HepEm(sycl::queue q_ct1)
   may need to rewrite this code.
   */
   COPCORE_CUDA_CHECK(
-      (q_ct1.memcpy(g_g4HepEmData.get_ptr(), &dataOnDevice, sizeof(G4HepEmData))
+      (q_ct1.memcpy(g4HepEmData.get_ptr(), &dataOnDevice, sizeof(G4HepEmData))
            .wait(),
        0));
 
@@ -431,10 +437,13 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
                                        nextActive,
                                        relocate, 
                                        scoring, 
-                                       item_ct1,
+                                       item_ct1
+                                       /*,
                                        g_electronManager.get_ptr(),
                                        g_g4HepEmPars.get_ptr(),
-                                       g_g4HepEmData.get_ptr());
+                                       g_g4HepEmData.get_ptr()
+                                       */
+                                      );
             });
       });
       /*
@@ -485,10 +494,13 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
                                         pNextActive,
                                         pRelocate,
                                         scoring,
-                                        item_ct1,
+                                        item_ct1
+                                        /*,
                                         g_electronManager.get_ptr(),
                                         g_g4HepEmPars.get_ptr(),
-                                        g_g4HepEmData.get_ptr()); 
+                                        g_g4HepEmData.get_ptr()
+                                        */
+                                        ); 
 	    });
       });
       /*
@@ -538,10 +550,12 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
                               gNextActive,
                               gRelocate,
                               scoring,
-                              item_ct1,
+                              item_ct1
+                              /*,
                               g_electronManager.get_ptr(),
                               g_g4HepEmPars.get_ptr(),
                               g_g4HepEmData.get_ptr()
+                              */
                             );
             });
       });
