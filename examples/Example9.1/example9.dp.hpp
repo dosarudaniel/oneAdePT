@@ -34,7 +34,7 @@ extern dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
 extern struct G4HepEmData *g4HepEmData_p;
 
 extern dpct::global_memory<struct G4HepEmElectronManager, 0> electronManager;
-extern struct G4HepEmElectronManager  *electronManager_p;
+//extern struct G4HepEmElectronManager * const electronManager_p;
 
 // A data structure to represent a particle track. The particle type is implicit
 // by the queue and not stored in memory.
@@ -155,8 +155,9 @@ template <bool IsElectron>
 SYCL_EXTERNAL void TransportElectrons(Track *electrons, const adept::MParray *active, Secondaries secondaries,
    adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring,
    sycl::nd_item<3> item_ct1
+   ,
+   struct G4HepEmElectronManager *electronManager
    /*,
-   struct G4HepEmElectronManager *electronManager,
    struct G4HepEmParameters *g4HepEmPars,
    struct G4HepEmData *g4HepEmData
    */
@@ -166,8 +167,9 @@ extern template
 SYCL_EXTERNAL void TransportElectrons<true>(
     Track *electrons, const adept::MParray *active, Secondaries secondaries, adept::MParray *activeQueue,
     adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1
-    /*,
-    struct G4HepEmElectronManager *electronManager,
+   ,
+   struct G4HepEmElectronManager *electronManager
+   /*,
     struct G4HepEmParameters *g4HepEmPars,
     struct G4HepEmData *g4HepEmData*/
     );
@@ -176,8 +178,9 @@ extern  template
 SYCL_EXTERNAL void TransportElectrons<false>(
     Track *electrons, const adept::MParray *active, Secondaries secondaries, adept::MParray *activeQueue,
     adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1
-    /*,
-    struct G4HepEmElectronManager *electronManager,
+   ,
+   struct G4HepEmElectronManager *electronManager
+   /*,
     struct G4HepEmParameters *g4HepEmPars,
     struct G4HepEmData *g4HepEmData
     */
@@ -185,8 +188,9 @@ SYCL_EXTERNAL void TransportElectrons<false>(
 
 SYCL_EXTERNAL void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries secondaries,
     adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1
-    /*,
-    struct G4HepEmElectronManager *electronManager,
+   ,
+   struct G4HepEmElectronManager *electronManager
+   /*,
     struct G4HepEmParameters *g4HepEmPars,
     struct G4HepEmData *g4HepEmData
     */
