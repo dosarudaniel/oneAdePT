@@ -9,6 +9,7 @@
 extern SYCL_EXTERNAL NavIndex_t *&vecgeom::globaldevicegeomdata::GetNavIndex();
 extern SYCL_EXTERNAL vecgeom::VPlacedVolume *&vecgeom::globaldevicegeomdata::GetCompactPlacedVolBuffer();
 extern SYCL_EXTERNAL void TopMatrixImpl(NavIndex_t nav_ind, vecgeom::Transformation3D &trans);
+//extern SYCL_EXTERNAL void mulmod(unsigned long const*, unsigned long*);
 
 #include <CL/sycl.hpp>
 #include <dpct/dpct.hpp>
@@ -27,14 +28,9 @@ extern SYCL_EXTERNAL void TopMatrixImpl(NavIndex_t nav_ind, vecgeom::Transformat
 // (defined in example9.cu)
 
 extern dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
-//extern struct G4HepEmParameters *g4HepEmPars_p;
-
 extern dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
-//extern struct G4HepEmData *g4HepEmData_p;
-
 extern dpct::global_memory<struct G4HepEmElectronManager, 0> electronManager;
 extern dpct::global_memory<struct G4HepEmGammaManager, 0> gammaManager;
-//extern struct G4HepEmElectronManager * const electronManager_p;
 
 // A data structure to represent a particle track. The particle type is implicit
 // by the queue and not stored in memory.

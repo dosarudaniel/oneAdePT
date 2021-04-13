@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: 2021 CERN
 // SPDX-License-Identifier: Apache-2.0
 
+
+#include <CL/sycl.hpp>
+#include <dpct/dpct.hpp>
 #include "example9.h"
 
 #include <AdePT/1/ArgParser.h>
@@ -30,6 +33,11 @@
 #ifdef VECGEOM_GDML
 #include <VecGeom/gdml/Frontend.h>
 #endif
+
+dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
+dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
+dpct::global_memory<struct G4HepEmElectronManager, 0> electronManager;
+dpct::global_memory<struct G4HepEmGammaManager, 0> gammaManager;
 
 static void InitGeant4()
 {

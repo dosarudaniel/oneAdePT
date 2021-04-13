@@ -17,8 +17,6 @@
 #include <G4HepEmGammaInteractionCompton.icc>
 #include <G4HepEmGammaInteractionConversion.icc>
 
-dpct::global_memory<struct G4HepEmGammaManager, 0> gammaManager;
-
 constexpr double kPush = 1.e-8 * copcore::units::cm;
 
 void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries secondaries,

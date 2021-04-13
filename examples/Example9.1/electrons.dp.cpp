@@ -22,15 +22,6 @@
 #include <G4HepEmElectronInteractionIoni.icc>
 #include <G4HepEmPositronInteractionAnnihilation.icc>
 
-dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
-//struct G4HepEmParameters *g4HepEmPars_p;
-
-dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
-//struct G4HepEmData *g4HepEmData_p;
-
-dpct::global_memory<struct G4HepEmElectronManager, 0> electronManager;
-//struct G4HepEmElectronManager *electronManager_p;
-
 // Compute the physics and geometry step limit, transport the electrons while
 // applying the continuous effects and maybe a discrete process that could
 // generate secondaries.

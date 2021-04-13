@@ -11,6 +11,11 @@
 #include <VecGeom/management/CudaManager.h> // forward declares vecgeom::cxx::VPlacedVolume
 #endif
 
+#include <G4HepEmData.hh>
+#include <G4HepEmParameters.hh>
+#include <G4HepEmElectronManager.hh>
+#include <G4HepEmGammaManager.hh>
+
 void example9(const vecgeom::VPlacedVolume *world, int numParticles, double energy, 
                 struct G4HepEmElectronManager *electronManager_p, 
                 struct G4HepEmGammaManager *gammaManager_p, 

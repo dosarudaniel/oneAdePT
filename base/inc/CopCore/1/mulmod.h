@@ -3,9 +3,13 @@
 
 #include <CL/sycl.hpp>
 #include <dpct/dpct.hpp>
+
 #include <cstdint>
 
 #include "CopCore/1/Global.h"
+
+#ifndef COPCORE_MULMOD_H
+#define COPCORE_MULMOD_H
 
 /// Compute `a + b` and set `overflow` accordingly.
 
@@ -55,45 +59,42 @@ static inline uint64_t sub_carry(uint64_t a, uint64_t b, unsigned &carry)
 /// \param[in] in2 second factor as 9 numbers of 64 bits each
 /// \param[out] out result with 18 numbers of 64 bits each
 
-void multiply9x9(const uint64_t *in1, const uint64_t *in2, uint64_t *out)
+static inline void multiply9x9(const uint64_t *in1, const uint64_t *in2, uint64_t *out)
 {
   uint64_t next      = 0;
   unsigned nextCarry = 0;
 
-#if defined(__clang__) || defined(__INTEL_COMPILER) ||                         \
-    defined(SYCL_LANGUAGE_VERSION)
+#if defined(__clang__) || defined(__INTEL_COMPILER) || defined(SYCL_LANGUAGE_VERSION)
 #pragma unroll
 #elif defined(__GNUC__) && __GNUC__ >= 8
-// This pragma was introduced in GCC version 8.
+    // This pragma was introduced in GCC version 8.
 #pragma GCC unroll 18
 #endif
-  for (int i = 0; i < 18; i++) {
-    uint64_t current = next;
-    unsigned carry   = nextCarry;
+    for (int i = 0; i < 18; i++) {
+      uint64_t current = next;
+      unsigned carry   = nextCarry;
 
-    next      = 0;
-    nextCarry = 0;
+      next      = 0;
+      nextCarry = 0;
 
-#if defined(__clang__) || defined(__INTEL_COMPILER) ||                         \
-    defined(SYCL_LANGUAGE_VERSION)
+#if defined(__clang__) || defined(__INTEL_COMPILER) ||  defined(SYCL_LANGUAGE_VERSION)
 #pragma unroll
 #elif defined(__GNUC__) && __GNUC__ >= 8
-// This pragma was introduced in GCC version 8.
+      // This pragma was introduced in GCC version 8.
 #pragma GCC unroll 9
 #endif
-    for (int j = 0; j < 9; j++) {
-      int k = i - j;
-      if (k < 0 || k >= 9) continue;
+      for (int j = 0; j < 9; j++) {
+	int k = i - j;
+	if (k < 0 || k >= 9) continue;
 
-      uint64_t fac1 = in1[j];
-      uint64_t fac2 = in2[k];
-#if defined(__SIZEOF_INT128__) && !defined(ROOT_NO_INT128) &&                  \
-    !defined(DPCT_COMPATIBILITY_TEMP)
-      unsigned __int128 prod = fac1;
-      prod                   = prod * fac2;
+	uint64_t fac1 = in1[j];
+	uint64_t fac2 = in2[k];
+#if defined(__SIZEOF_INT128__) && !defined(ROOT_NO_INT128) &&  !defined(DPCT_COMPATIBILITY_TEMP)
+	unsigned __int128 prod = fac1;
+	prod                   = prod * fac2;
 
-      uint64_t upper = prod >> 64;
-      uint64_t lower = static_cast<uint64_t>(prod);
+	uint64_t upper = prod >> 64;
+	uint64_t lower = static_cast<uint64_t>(prod);
 #else
       uint64_t upper1 = fac1 >> 32;
       uint64_t lower1 = static_cast<uint32_t>(fac1);
@@ -173,7 +174,7 @@ void multiply9x9(const uint64_t *in1, const uint64_t *in2, uint64_t *out)
 /// Note that this function does *not* return the smallest value congruent to
 /// the modulus, it only guarantees a value smaller than \f$ 2^{576} \$!
 
-void mod_m(const uint64_t *mul, uint64_t *out)
+static inline void mod_m(const uint64_t *mul, uint64_t *out)
 {
   uint64_t r[9] = {0};
 
@@ -318,8 +319,7 @@ void mod_m(const uint64_t *mul, uint64_t *out)
 ///
 /// \param[in] in1 first factor with 9 numbers of 64 bits each
 /// \param[inout] inout second factor and also the output of the same size
-
-void mulmod(const uint64_t *in1, uint64_t *inout)
+static inline void mulmod(const uint64_t *in1, uint64_t *inout)
 {
   uint64_t mul[2 * 9] = {0};
   multiply9x9(in1, inout, mul);
@@ -334,7 +334,7 @@ void mulmod(const uint64_t *in1, uint64_t *inout)
 ///
 /// The arguments base and res may point to the same location.
 
-void powermod(const uint64_t *base, uint64_t *res, uint64_t n)
+static inline void powermod(const uint64_t *base, uint64_t *res, uint64_t n)
 {
   uint64_t fac[9] = {0};
   fac[0]          = base[0];
@@ -356,3 +356,4 @@ void powermod(const uint64_t *base, uint64_t *res, uint64_t n)
     mod_m(mul, fac);
   }
 }
+#endif
