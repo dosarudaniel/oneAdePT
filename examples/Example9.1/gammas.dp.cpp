@@ -23,7 +23,10 @@ constexpr double kPush = 1.e-8 * copcore::units::cm;
 
 void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries secondaries,
                      adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring,
-		     sycl::nd_item<3> item_ct1)
+		     sycl::nd_item<3> item_ct1,
+                        struct G4HepEmGammaManager *gammaManager_p,
+                        struct G4HepEmParameters *g4HepEmPars_p,
+                        struct G4HepEmData *g4HepEmData_p)
 {
   int activeSize = active->size();
   for (int i = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
@@ -56,7 +59,7 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
     }
 
     // Call G4HepEm to compute the physics step limit.
-    gammaManager->HowFar(&g4HepEmData, &g4HepEmPars, &emTrack);
+    gammaManager_p->HowFar(g4HepEmData_p, g4HepEmPars_p, &emTrack);
 
     // Get result into variables.
     double geometricalStepLengthFromPhysics = emTrack.GetGStepLength();
@@ -75,7 +78,7 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
       emTrack.SetOnBoundary(true);
     }
 
-    gammaManager->UpdateNumIALeft(&emTrack);
+    gammaManager_p->UpdateNumIALeft(&emTrack);
 
     // Save the `number-of-interaction-left` in our track.
     for (int ip = 0; ip < 3; ++ip) {
@@ -120,7 +123,7 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
 
       double logEnergy = sycl::log((double)energy);
       double elKinEnergy, posKinEnergy;
-      SampleKinEnergies(&g4HepEmData, energy, logEnergy, theMCIndex, elKinEnergy, posKinEnergy, &rnge);
+      SampleKinEnergies(g4HepEmData_p, energy, logEnergy, theMCIndex, elKinEnergy, posKinEnergy, &rnge);
 
       double dirPrimary[] = {currentTrack.dir.x(), currentTrack.dir.y(), currentTrack.dir.z()};
       double dirSecondaryEl[3], dirSecondaryPos[3];

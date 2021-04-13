@@ -225,8 +225,11 @@ public:
   {
     return (nav_ind > 0) ? ToPlacedVolume(NavInd(nav_ind + 1)) : nullptr;
   }
-
-  VECCORE_ATT_HOST_DEVICE SYCL_EXTERNAL
+#if (defined( __SYCL_DEVICE_ONLY__))
+  SYCL_EXTERNAL
+#else
+  VECCORE_ATT_HOST_DEVICE
+#endif  
   static void TopMatrixImpl(NavIndex_t nav_ind, Transformation3D &trans);
 
   VECCORE_ATT_HOST_DEVICE

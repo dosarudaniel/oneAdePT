@@ -13,6 +13,7 @@
 
 void example9(const vecgeom::VPlacedVolume *world, int numParticles, double energy, 
                 struct G4HepEmElectronManager *electronManager_p, 
+                struct G4HepEmGammaManager *gammaManager_p, 
                 struct G4HepEmParameters *g4HepEmPars_p,
                 struct G4HepEmData *g4HepEmData_p);
 

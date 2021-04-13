@@ -23,7 +23,6 @@ extern SYCL_EXTERNAL void TopMatrixImpl(NavIndex_t nav_ind, vecgeom::Transformat
 #include <VecGeom/base/Vector3D.h>
 #include <VecGeom/navigation/NavStateIndex.h>
 
-
 // Constant data structures from G4HepEm accessed by the kernels.
 // (defined in example9.cu)
 
@@ -34,10 +33,12 @@ extern dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
 //extern struct G4HepEmData *g4HepEmData_p;
 
 extern dpct::global_memory<struct G4HepEmElectronManager, 0> electronManager;
+extern dpct::global_memory<struct G4HepEmGammaManager, 0> gammaManager;
 //extern struct G4HepEmElectronManager * const electronManager_p;
 
 // A data structure to represent a particle track. The particle type is implicit
 // by the queue and not stored in memory.
+
 struct Track {
   RanluxppDouble rngState;
   double energy;
@@ -77,20 +78,10 @@ struct Track {
 };
 
 class RanluxppDoubleEngine : public G4HepEmRandomEngine {
-  // Wrapper functions to call into RanluxppDouble.
-  static double FlatWrapper(void *object) { return ((RanluxppDouble *)object)->Rndm(); }
-  static void FlatArrayWrapper(void *object, const int size, double *vect)
-  {
-    for (int i = 0; i < size; i++) {
-      vect[i] = ((RanluxppDouble *)object)->Rndm();
-    }
-  }
-
 public:
   RanluxppDoubleEngine(RanluxppDouble *engine)
-      : G4HepEmRandomEngine(/*object=*/engine, &FlatWrapper, &FlatArrayWrapper)
-  {
-  }
+      : G4HepEmRandomEngine(/*object=*/engine)
+  {}
 };
 
 
@@ -177,7 +168,7 @@ SYCL_EXTERNAL void TransportElectrons<false>(
 
 SYCL_EXTERNAL void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries secondaries,
     adept::MParray *activeQueue, adept::MParray *relocateQueue, GlobalScoring *scoring, sycl::nd_item<3> item_ct1,
-    struct G4HepEmElectronManager *electronManager,
+    struct G4HepEmGammaManager *gammaManager,
     struct G4HepEmParameters *g4HepEmPars,
     struct G4HepEmData *g4HepEmData);
 

@@ -17,6 +17,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_executable(example9.1 example9.cpp example9.dp.cpp electrons.dp.cpp gammas.dp.cpp) #  relocation.cu)
 target_include_directories(example9.1 PUBLIC
+      $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/base/inc/G4HepEm>
       $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/base/inc>
       $<INSTALL_INTERFACE:base>)
 target_link_libraries(example9.1 PRIVATE VecGeom::vecgeom VecGeom::vecgeomcuda_static VecGeom::vgdml ${Geant4_LIBRARIES} G4HepEm::g4HepEmData G4HepEm::g4HepEmInit G4HepEm::g4HepEmRun ${SYCL_FLAGS} ${EXTRA_FLAGS})

@@ -85,6 +85,7 @@ int main(int argc, char *argv[])
 #endif
 
   struct G4HepEmElectronManager *electronManager_p;
+  struct G4HepEmGammaManager *gammaManager_p;
   struct G4HepEmParameters *g4HepEmPars_p;
   struct G4HepEmData *g4HepEmData_p;
 
@@ -107,5 +108,5 @@ int main(int argc, char *argv[])
 
   if (!world) return 4;
 
-  example9(world, particles, energy, electronManager_p, g4HepEmPars_p, g4HepEmData_p);
+  example9(world, particles, energy, electronManager_p, gammaManager_p, g4HepEmPars_p, g4HepEmData_p);
 }

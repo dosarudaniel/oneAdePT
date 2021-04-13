@@ -8,9 +8,9 @@
 
 #ifdef __SYCL_DEVICE_ONLY__
 #define __constant__
-#pragma message("Compiling on device.")
+//#pragma message("Compiling on device.")
 #else
-#pragma message("Compiling on host.")
+//#pragma message("Compiling on host.")
 #endif
 
                     
