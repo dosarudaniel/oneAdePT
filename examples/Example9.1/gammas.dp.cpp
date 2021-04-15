@@ -4,6 +4,7 @@
 #include <CL/sycl.hpp>
 #include <dpct/dpct.hpp>
 #include "example9.dp.hpp"
+#include <stdlib.h>
 
 #include <AdePT/1/LoopNavigator.h>
 #include <CopCore/1/PhysicalConstants.h>
@@ -50,7 +51,7 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
     for (int ip = 0; ip < 3; ++ip) {
       double numIALeft = currentTrack.numIALeft[ip];
       if (numIALeft <= 0) {
-        numIALeft = -sycl::log(currentTrack.Uniform());
+	numIALeft = -sycl::log(currentTrack.Uniform());
         currentTrack.numIALeft[ip] = numIALeft;
       }
       emTrack.SetNumIALeft(numIALeft, ip);

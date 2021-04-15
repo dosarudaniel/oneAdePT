@@ -4,6 +4,7 @@
 #include <CL/sycl.hpp>
 #include <dpct/dpct.hpp>
 #include "example9.dp.hpp"
+#include <stdlib.h>
 
 #include <Field/1/fieldPropagatorConstBz.h>
 

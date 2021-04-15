@@ -6,14 +6,14 @@
 class  G4HepEmRandomEngine;
 
 #if (defined( __SYCL_DEVICE_ONLY__))
-  SYCL_EXTERNAL
+SYCL_EXTERNAL
 #else
 G4HepEmHostDevice
 #endif
 double SampleCostModifiedTsai(const double thePrimEkin, G4HepEmRandomEngine* rnge);
 
 #if (defined( __SYCL_DEVICE_ONLY__))
-  SYCL_EXTERNAL
+SYCL_EXTERNAL
 #else
 G4HepEmHostDevice
 #endif

@@ -6,7 +6,11 @@
 
 #include <cmath>
 
+#if (defined( __SYCL_DEVICE_ONLY__))
+SYCL_EXTERNAL
+#else
 G4HepEmHostDevice
+#endif
 double SampleCostModifiedTsai(const double thePrimEkin, G4HepEmRandomEngine* rnge) {
   // sample photon direction (modified Tsai sampling):
   const double uMax = 2.0*(1.0 + thePrimEkin/kElectronMassC2);
@@ -23,7 +27,13 @@ double SampleCostModifiedTsai(const double thePrimEkin, G4HepEmRandomEngine* rng
 
 // times = 1.0 for Brem and -1.0 for Pair production
 // densityCor = 0.0  for Pair production
+
+
+#if (defined( __SYCL_DEVICE_ONLY__))
+SYCL_EXTERNAL
+#else
 G4HepEmHostDevice
+#endif
 void EvaluateLPMFunctions(double& funcXiS, double& funcGS, double& funcPhiS, const double egamma,
      const double etotal, const double elpm, const double z23, const double ilVarS1,
      const double ilVarS1Cond, const double densityCor, const double times) {
@@ -49,7 +59,7 @@ void EvaluateLPMFunctions(double& funcXiS, double& funcGS, double& funcPhiS, con
     if (varShat > 1.0) {
       funcXiS = 1.0;
     } else if (varShat > varS1) {
-      funcXiS = 1.0 + std::log ( varShat ) * ilVarS1;
+      funcXiS = 1.0 + std::log( varShat ) * ilVarS1;
     }
   }
   // avluate the LPM G(s) and Phi(s) function (approximations) at s = s-hat

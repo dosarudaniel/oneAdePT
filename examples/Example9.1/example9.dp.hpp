@@ -6,11 +6,6 @@
 
 #include "example9.h"
 
-extern SYCL_EXTERNAL NavIndex_t *&vecgeom::globaldevicegeomdata::GetNavIndex();
-extern SYCL_EXTERNAL vecgeom::VPlacedVolume *&vecgeom::globaldevicegeomdata::GetCompactPlacedVolBuffer();
-extern SYCL_EXTERNAL void TopMatrixImpl(NavIndex_t nav_ind, vecgeom::Transformation3D &trans);
-//extern SYCL_EXTERNAL void mulmod(unsigned long const*, unsigned long*);
-
 #include <CL/sycl.hpp>
 #include <dpct/dpct.hpp>
 #include <AdePT/1/MParray.h>
@@ -23,6 +18,19 @@ extern SYCL_EXTERNAL void TopMatrixImpl(NavIndex_t nav_ind, vecgeom::Transformat
 
 #include <VecGeom/base/Vector3D.h>
 #include <VecGeom/navigation/NavStateIndex.h>
+
+extern SYCL_EXTERNAL NavIndex_t *&vecgeom::globaldevicegeomdata::GetNavIndex();
+extern SYCL_EXTERNAL vecgeom::VPlacedVolume *&vecgeom::globaldevicegeomdata::GetCompactPlacedVolBuffer();
+
+/*
+extern SYCL_EXTERNAL double SampleCostModifiedTsai(const double thePrimEkin, G4HepEmRandomEngine* rnge);
+extern SYCL_EXTERNAL void EvaluateLPMFunctions(double& funcXiS, double& funcGS, double& funcPhiS,
+					       const double egamma, const double etotal, const double elpm,
+					       const double z23, const double ilVarS1, const double ilVarS1Cond,
+					       const double densityCor, const double times);
+*/
+extern SYCL_EXTERNAL void RotateToReferenceFrame(double* dir, const double* refDir);
+extern SYCL_EXTERNAL double GetSplineLog(int ndata, double* xdata, double* ydata, double x, double logx, double logxmin, double invLDBin);
 
 // Constant data structures from G4HepEm accessed by the kernels.
 // (defined in example9.cu)
