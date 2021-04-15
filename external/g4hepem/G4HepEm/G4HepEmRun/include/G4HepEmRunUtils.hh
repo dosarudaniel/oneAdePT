@@ -12,13 +12,8 @@
 // computed.
 G4HepEmHostDevice
 void RotateToReferenceFrame(double &u, double &v, double &w, const double* refDir);
-#if (defined( __SYCL_DEVICE_ONLY__))
-  SYCL_EXTERNAL
-#else
 G4HepEmHostDevice
-#endif
 void RotateToReferenceFrame(double* dir, const double* refDir);
-
 
 
 // get spline interpolation over a log-spaced xgrid previously prepared by
@@ -30,11 +25,7 @@ double GetSplineLog(int ndata, double* xdata, double* ydata, double* secderiv, d
 // get spline interpolation over a log-spaced xgrid previously prepared by
 // PrepareSpline (compact storrage of ydata and second deriavtive in ydata)
 // use the improved, robust spline interpolation that I put in G4 10.6
-#if (defined( __SYCL_DEVICE_ONLY__))
-  SYCL_EXTERNAL
-#else
-  G4HepEmHostDevice
-#endif
+G4HepEmHostDevice
 double GetSplineLog(int ndata, double* xdata, double* ydata, double x, double logx, double logxmin, double invLDBin);
 
 // get spline interpolation over a log-spaced xgrid previously prepared by
