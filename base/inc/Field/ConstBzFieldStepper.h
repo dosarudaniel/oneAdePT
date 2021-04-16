@@ -15,6 +15,8 @@
 
 #include "VecGeom/base/Global.h"
 
+//extern SYCL_EXTERNAL void TopMatrixImpl(NavIndex_t nav_ind, Transformation3D &trans);
+
 // namespace adept {
 // inline namespace ADEPT_IMPL_NAMESPACE {
 
@@ -100,7 +102,10 @@ inline __attribute__((always_inline)) void ConstBzFieldStepper::DoStep(
 
   BaseDType cosphi;
   BaseDType sinphi;
-  sincos(phi, &sinphi, &cosphi);
+  //sincos(phi, &sinphi, &cosphi);
+
+  sinphi = sin(phi);
+  cosphi = cos(phi);
 
   x = x0 + R * (-sina - (-cosphi * sina - sinphi * cosa));
   y = y0 + R * (cosa - (-sinphi * sina + cosphi * cosa));

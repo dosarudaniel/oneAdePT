@@ -12,10 +12,8 @@
 // computed.
 G4HepEmHostDevice
 void RotateToReferenceFrame(double &u, double &v, double &w, const double* refDir);
-
 G4HepEmHostDevice
 void RotateToReferenceFrame(double* dir, const double* refDir);
-
 
 
 // get spline interpolation over a log-spaced xgrid previously prepared by
