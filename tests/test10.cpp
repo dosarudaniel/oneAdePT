@@ -9,7 +9,7 @@
 
 void kernel(double *d)
 {
-  *d = std::log(10);
+  *d = std::log(*d);
 }
 
 int main(void)
