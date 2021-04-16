@@ -22,13 +22,6 @@
 extern SYCL_EXTERNAL NavIndex_t *&vecgeom::globaldevicegeomdata::GetNavIndex();
 extern SYCL_EXTERNAL vecgeom::VPlacedVolume *&vecgeom::globaldevicegeomdata::GetCompactPlacedVolBuffer();
 
-/*
-extern SYCL_EXTERNAL double SampleCostModifiedTsai(const double thePrimEkin, G4HepEmRandomEngine* rnge);
-extern SYCL_EXTERNAL void EvaluateLPMFunctions(double& funcXiS, double& funcGS, double& funcPhiS,
-					       const double egamma, const double etotal, const double elpm,
-					       const double z23, const double ilVarS1, const double ilVarS1Cond,
-					       const double densityCor, const double times);
-*/
 extern SYCL_EXTERNAL void RotateToReferenceFrame(double* dir, const double* refDir);
 extern SYCL_EXTERNAL double GetSplineLog(int ndata, double* xdata, double* ydata, double x, double logx, double logxmin, double invLDBin);
 

@@ -38,6 +38,7 @@ set(ONEAPI_UNIT_TESTS_BASE
   test8.cpp                    # converted (and modified) test_atomic.cu using oneAtomic.h
   test9.cpp                    # converted and modified  test_track_block.cu
   test10.cpp                   # test log() function
+  test11.cpp                   # 
   )
 
 build_tests("${ONEAPI_UNIT_TESTS_BASE}")

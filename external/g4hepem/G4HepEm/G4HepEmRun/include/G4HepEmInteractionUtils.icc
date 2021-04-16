@@ -1,10 +1,20 @@
-
 #include "G4HepEmInteractionUtils.hh"
 
 #include "G4HepEmRandomEngine.hh"
 #include "G4HepEmConstants.hh"
 
 #include <cmath>
+
+/*
+G4HepEmHostDevice
+double Log(double x) {
+#if (defined( __SYCL_DEVICE_ONLY__))
+  return(sycl::log(x));
+#else
+  return(std::log(x));
+#endif
+}
+*/
 
 #if (defined( __SYCL_DEVICE_ONLY__))
 SYCL_EXTERNAL

@@ -10,7 +10,7 @@
 #define COPCORE_1GLOBAL_H_
 
 #include <CL/sycl.hpp>
-#include <dpct/dpct.hpp>
+//#include <dpct/dpct.hpp>
 #include <cstdio>
 #include <type_traits>
 #include <CopCore/1/Macros.h>
