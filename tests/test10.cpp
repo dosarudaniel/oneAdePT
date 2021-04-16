@@ -5,13 +5,11 @@
 
 #include <iostream>
 #include <stdlib.h>
-#include <math.h>
 
 void kernel(double *d)
 {
   *d = sycl::log(*d);
 }
-
 
 int main(void)
 {
