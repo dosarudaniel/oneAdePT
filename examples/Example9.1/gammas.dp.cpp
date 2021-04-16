@@ -15,6 +15,7 @@
 #include <G4HepEmGammaInteractionConversion.hh>
 // Pull in implementation.
 #include <G4HepEmGammaManager.icc>
+#include <G4HepEmInteractionUtils.icc>
 #include <G4HepEmGammaInteractionCompton.icc>
 #include <G4HepEmGammaInteractionConversion.icc>
 

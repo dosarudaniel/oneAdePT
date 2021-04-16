@@ -6,18 +6,18 @@
 class  G4HepEmRandomEngine;
 
 #if (defined( __SYCL_DEVICE_ONLY__))
-SYCL_EXTERNAL
+//SYCL_EXTERNAL
 #else
 G4HepEmHostDevice
 #endif
-double SampleCostModifiedTsai(const double thePrimEkin, G4HepEmRandomEngine* rnge);
+static inline double SampleCostModifiedTsai(const double thePrimEkin, G4HepEmRandomEngine* rnge);
 
 #if (defined( __SYCL_DEVICE_ONLY__))
-SYCL_EXTERNAL
+//SYCL_EXTERNAL
 #else
 G4HepEmHostDevice
 #endif
-void EvaluateLPMFunctions(double& funcXiS, double& funcGS, double& funcPhiS,
+static inline void EvaluateLPMFunctions(double& funcXiS, double& funcGS, double& funcPhiS,
                      const double egamma, const double etotal, const double elpm,
                      const double z23, const double ilVarS1, const double ilVarS1Cond,
                      const double densityCor, const double times);

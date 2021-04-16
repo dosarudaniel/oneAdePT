@@ -1,5 +1,6 @@
 
 #include "G4HepEmInteractionUtils.hh"
+#include <CL/sycl.hpp>
 
 #include "G4HepEmRandomEngine.hh"
 #include "G4HepEmConstants.hh"
@@ -7,18 +8,18 @@
 #include <cmath>
 
 #if (defined( __SYCL_DEVICE_ONLY__))
-SYCL_EXTERNAL
+//SYCL_EXTERNAL
 #else
 G4HepEmHostDevice
 #endif
-double SampleCostModifiedTsai(const double thePrimEkin, G4HepEmRandomEngine* rnge) {
+static inline double SampleCostModifiedTsai(const double thePrimEkin, G4HepEmRandomEngine* rnge) {
   // sample photon direction (modified Tsai sampling):
   const double uMax = 2.0*(1.0 + thePrimEkin/kElectronMassC2);
   double rndm3[3];
   double u;
   do {
     rnge->flatArray(3, rndm3);
-    const double uu = -std::log(rndm3[0]*rndm3[1]);
+    const double uu = -sycl::log(rndm3[0]*rndm3[1]);
     u = (0.25 > rndm3[2]) ? uu*1.6 : uu*0.533333333;
   } while (u > uMax);
   // cost = 1.0 - 2.0*u*u/(uMax*uMax);
@@ -30,11 +31,11 @@ double SampleCostModifiedTsai(const double thePrimEkin, G4HepEmRandomEngine* rng
 
 
 #if (defined( __SYCL_DEVICE_ONLY__))
-SYCL_EXTERNAL
+//SYCL_EXTERNAL
 #else
 G4HepEmHostDevice
 #endif
-void EvaluateLPMFunctions(double& funcXiS, double& funcGS, double& funcPhiS, const double egamma,
+static inline void EvaluateLPMFunctions(double& funcXiS, double& funcGS, double& funcPhiS, const double egamma,
      const double etotal, const double elpm, const double z23, const double ilVarS1,
      const double ilVarS1Cond, const double densityCor, const double times) {
   const double     sqrt2 = 1.414213562373095;
@@ -46,7 +47,7 @@ void EvaluateLPMFunctions(double& funcXiS, double& funcGS, double& funcPhiS, con
   if (varSprime > 1.0) {
     funcXiSprime = 1.0;
   } else if (varSprime > condition) {
-    const double funcHSprime = std::log(varSprime)*ilVarS1Cond;
+    const double funcHSprime = sycl::log(varSprime)*ilVarS1Cond;
     funcXiSprime = 1.0 + funcHSprime - 0.08*(1.0-funcHSprime)*funcHSprime*(2.0-funcHSprime)*ilVarS1Cond;
   }
   funcXiS = funcXiSprime;
@@ -59,7 +60,7 @@ void EvaluateLPMFunctions(double& funcXiS, double& funcGS, double& funcPhiS, con
     if (varShat > 1.0) {
       funcXiS = 1.0;
     } else if (varShat > varS1) {
-      funcXiS = 1.0 + std::log( varShat ) * ilVarS1;
+      funcXiS = 1.0 + sycl::log( varShat ) * ilVarS1;
     }
   }
   // avluate the LPM G(s) and Phi(s) function (approximations) at s = s-hat
