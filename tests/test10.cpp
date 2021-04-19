@@ -4,7 +4,7 @@
 
 void kernel(double *d)
 {
-  *d = sycl::log(*d);
+  *d = log(*d);
 }
 
 int main(void)
