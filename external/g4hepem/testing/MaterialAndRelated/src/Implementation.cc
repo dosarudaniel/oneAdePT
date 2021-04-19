@@ -59,7 +59,7 @@ bool TestElementData ( const struct G4HepEmData* hepEmData ) {
         std::cerr << "\n*** ERROR:\nElementData: G4HepEm-Geant4 mismatch: fc != " << elData.fCoulomb << " != "  << fc << std::endl;
         break;
       }
-      double logZ = std::log(izet);
+      double logZ = log(izet);
       if (elData.fLogZ != logZ ) {
         isPassed = false;
         std::cerr << "\n*** ERROR:\nElementData: G4HepEm-Geant4 mismatch: fLogZ != " << elData.fLogZ << " != "  << logZ << std::endl;

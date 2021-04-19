@@ -15,8 +15,6 @@
 
 #include "VecGeom/base/Global.h"
 
-//extern SYCL_EXTERNAL void TopMatrixImpl(NavIndex_t nav_ind, Transformation3D &trans);
-
 // namespace adept {
 // inline namespace ADEPT_IMPL_NAMESPACE {
 

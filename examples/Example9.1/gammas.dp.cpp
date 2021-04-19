@@ -13,6 +13,15 @@
 #include <G4HepEmTrack.hh>
 #include <G4HepEmGammaInteractionCompton.hh>
 #include <G4HepEmGammaInteractionConversion.hh>
+
+#if (defined( __SYCL_DEVICE_ONLY__))
+#define log sycl::log
+#define exp sycl::exp
+#else
+#define exp std::exp
+#define log std::log
+#endif
+
 // Pull in implementation.
 #include <G4HepEmGammaManager.icc>
 #include <G4HepEmGammaInteractionCompton.icc>
@@ -27,6 +36,7 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
                         struct G4HepEmParameters *g4HepEmPars_p,
                         struct G4HepEmData *g4HepEmData_p)
 {
+  /*
   int activeSize = active->size();
   for (int i = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
                item_ct1.get_local_id(2);
@@ -51,7 +61,7 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
     for (int ip = 0; ip < 3; ++ip) {
       double numIALeft = currentTrack.numIALeft[ip];
       if (numIALeft <= 0) {
-	numIALeft = -sycl::log(currentTrack.Uniform());
+	numIALeft = -log(currentTrack.Uniform());
         currentTrack.numIALeft[ip] = numIALeft;
       }
       emTrack.SetNumIALeft(numIALeft, ip);
@@ -120,7 +130,7 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
         continue;
       }
 
-      double logEnergy = sycl::log((double)energy);
+      double logEnergy = log((double)energy);
       double elKinEnergy, posKinEnergy;
       SampleKinEnergies(g4HepEmData_p, energy, logEnergy, theMCIndex, elKinEnergy, posKinEnergy, &rnge);
 
@@ -133,11 +143,11 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
       sycl::atomic<int>(sycl::global_ptr<int>(&scoring->secondaries))
           .fetch_add(2);
 
-      electron.InitAsSecondary(/*parent=*/currentTrack);
+      electron.InitAsSecondary(currentTrack);
       electron.energy = elKinEnergy;
       electron.dir.Set(dirSecondaryEl[0], dirSecondaryEl[1], dirSecondaryEl[2]);
 
-      positron.InitAsSecondary(/*parent=*/currentTrack);
+      positron.InitAsSecondary(currentTrack);
       positron.energy = posKinEnergy;
       positron.dir.Set(dirSecondaryPos[0], dirSecondaryPos[1], dirSecondaryPos[2]);
 
@@ -163,7 +173,7 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
         sycl::atomic<int>(sycl::global_ptr<int>(&scoring->secondaries))
             .fetch_add(1);
 
-        electron.InitAsSecondary(/*parent=*/currentTrack);
+        electron.InitAsSecondary(currentTrack);
         electron.energy = energyEl;
         electron.dir = energy * currentTrack.dir - newEnergyGamma * newDirGamma;
         electron.dir.Normalize();
@@ -192,4 +202,5 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
     }
     }
   }
+  */
 }

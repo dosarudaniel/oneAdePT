@@ -19,11 +19,11 @@
 #include <VecGeom/base/Vector3D.h>
 #include <VecGeom/navigation/NavStateIndex.h>
 
-extern SYCL_EXTERNAL NavIndex_t *&vecgeom::globaldevicegeomdata::GetNavIndex();
+//extern SYCL_EXTERNAL NavIndex_t *&vecgeom::globaldevicegeomdata::GetNavIndex();
 extern SYCL_EXTERNAL vecgeom::VPlacedVolume *&vecgeom::globaldevicegeomdata::GetCompactPlacedVolBuffer();
 
-extern SYCL_EXTERNAL void RotateToReferenceFrame(double* dir, const double* refDir);
-extern SYCL_EXTERNAL double GetSplineLog(int ndata, double* xdata, double* ydata, double x, double logx, double logxmin, double invLDBin);
+//extern SYCL_EXTERNAL void RotateToReferenceFrame(double* dir, const double* refDir);
+//extern SYCL_EXTERNAL double GetSplineLog(int ndata, double* xdata, double* ydata, double x, double logx, double logxmin, double invLDBin);
 
 // Constant data structures from G4HepEm accessed by the kernels.
 // (defined in example9.cu)

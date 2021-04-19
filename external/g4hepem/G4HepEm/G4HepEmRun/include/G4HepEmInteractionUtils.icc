@@ -5,17 +5,6 @@
 
 #include <cmath>
 
-/*
-G4HepEmHostDevice
-double Log(double x) {
-#if (defined( __SYCL_DEVICE_ONLY__))
-  return(sycl::log(x));
-#else
-  return(std::log(x));
-#endif
-}
-*/
-
 #if (defined( __SYCL_DEVICE_ONLY__))
 SYCL_EXTERNAL
 #else
@@ -28,7 +17,7 @@ double SampleCostModifiedTsai(const double thePrimEkin, G4HepEmRandomEngine* rng
   double u;
   do {
     rnge->flatArray(3, rndm3);
-    const double uu = -std::log(rndm3[0]*rndm3[1]);
+    const double uu = -log(rndm3[0]*rndm3[1]);
     u = (0.25 > rndm3[2]) ? uu*1.6 : uu*0.533333333;
   } while (u > uMax);
   // cost = 1.0 - 2.0*u*u/(uMax*uMax);
@@ -56,7 +45,7 @@ void EvaluateLPMFunctions(double& funcXiS, double& funcGS, double& funcPhiS, con
   if (varSprime > 1.0) {
     funcXiSprime = 1.0;
   } else if (varSprime > condition) {
-    const double funcHSprime = std::log(varSprime)*ilVarS1Cond;
+    const double funcHSprime = log(varSprime)*ilVarS1Cond;
     funcXiSprime = 1.0 + funcHSprime - 0.08*(1.0-funcHSprime)*funcHSprime*(2.0-funcHSprime)*ilVarS1Cond;
   }
   funcXiS = funcXiSprime;
@@ -69,7 +58,7 @@ void EvaluateLPMFunctions(double& funcXiS, double& funcGS, double& funcPhiS, con
     if (varShat > 1.0) {
       funcXiS = 1.0;
     } else if (varShat > varS1) {
-      funcXiS = 1.0 + std::log( varShat ) * ilVarS1;
+      funcXiS = 1.0 + log( varShat ) * ilVarS1;
     }
   }
   // avluate the LPM G(s) and Phi(s) function (approximations) at s = s-hat

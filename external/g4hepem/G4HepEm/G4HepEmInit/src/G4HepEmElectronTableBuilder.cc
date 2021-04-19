@@ -52,14 +52,14 @@ void BuildELossTables(G4MollerBhabhaModel* mbModel, G4SeltzerBergerModel* sbMode
     delete[] elData->fELossEnergyGrid;
   }
   elData->fELossEnergyGrid     = new double[numELoss];
-  elData->fELossLogMinEkin     = std::log(hepEmParams->fMinLossTableEnergy);
-  const double delta           = std::log(hepEmParams->fMaxLossTableEnergy/hepEmParams->fMinLossTableEnergy)/(numELoss-1.0);
+  elData->fELossLogMinEkin     = log(hepEmParams->fMinLossTableEnergy);
+  const double delta           = log(hepEmParams->fMaxLossTableEnergy/hepEmParams->fMinLossTableEnergy)/(numELoss-1.0);
   elData->fELossEILDelta       = 1.0/delta;
   // fill in
   elData->fELossEnergyGrid[0]          = hepEmParams->fMinLossTableEnergy;
   elData->fELossEnergyGrid[numELoss-1] = hepEmParams->fMaxLossTableEnergy;
   for (int i=1; i<numELoss-1; ++i) {
-    elData->fELossEnergyGrid[i] = std::exp(elData->fELossLogMinEkin+i*delta);
+    elData->fELossEnergyGrid[i] = exp(elData->fELossLogMinEkin+i*delta);
   }
   //
   // get the g4 particle-definition
@@ -255,11 +255,11 @@ void BuildLambdaTables(G4MollerBhabhaModel* mbModel, G4SeltzerBergerModel* sbMod
     const double       emax = hepEmParams->fMaxLossTableEnergy;
     const double   eminIoni = iselectron ? 2*elCutE : elCutE;
     const int    numDefEkin = hepEmParams->fNumLossTableBins+1;
-    const double      scale = std::log(hepEmParams->fMaxLossTableEnergy/hepEmParams->fMinLossTableEnergy);
-    const double  scaleIoni = std::log(emax/eminIoni);
+    const double      scale = log(hepEmParams->fMaxLossTableEnergy/hepEmParams->fMinLossTableEnergy);
+    const double  scaleIoni = log(emax/eminIoni);
     const int      numEIoni = std::max(4, (int)std::lrint(numDefEkin*scaleIoni/scale)+1);
     // generate the energy grid for Ioni
-    double          logEmin = std::log(eminIoni);
+    double          logEmin = log(eminIoni);
     double            delta = scaleIoni/(numEIoni-1);
     double         invLEDel =  1.0/delta;
     double       macXSecMax = -1.0;
@@ -267,7 +267,7 @@ void BuildLambdaTables(G4MollerBhabhaModel* mbModel, G4SeltzerBergerModel* sbMod
     energyGrid[0]           = eminIoni;
     energyGrid[numEIoni-1]  = emax;
     for (int ie=1; ie<numEIoni-1; ++ie) {
-      energyGrid[ie] = std::exp(logEmin+ie*delta);
+      energyGrid[ie] = exp(logEmin+ie*delta);
     }
     for (int ie=0; ie<numEIoni; ++ie) {
       const double theEKin  = energyGrid[ie];
@@ -299,10 +299,10 @@ void BuildLambdaTables(G4MollerBhabhaModel* mbModel, G4SeltzerBergerModel* sbMod
     // ===== Bremsstrahlung
     //
     const double   eminBrem = gamCutE;
-    const double  scaleBrem = std::log(emax/eminBrem);
+    const double  scaleBrem = log(emax/eminBrem);
     const int      numEBrem = std::max(4, (int)std::lrint(numDefEkin*scaleBrem/scale)+1);
     // generate the energy grid for Brem: smooth the mac-xsec values between the 2 models
-    logEmin                 = std::log(eminBrem);
+    logEmin                 = log(eminBrem);
     delta                   = scaleBrem/(numEBrem-1);
     invLEDel                =  1.0/delta;
     macXSecMax              = -1.0;
@@ -310,7 +310,7 @@ void BuildLambdaTables(G4MollerBhabhaModel* mbModel, G4SeltzerBergerModel* sbMod
     energyGrid[0]           = eminBrem;
     energyGrid[numEBrem-1]  = emax;
     for (int ie=1; ie<numEBrem-1; ++ie) {
-      energyGrid[ie] = std::exp(logEmin+ie*delta);
+      energyGrid[ie] = exp(logEmin+ie*delta);
     }
     // compute macroscopic cross section for Brem: smooth the xsection values between the 2 models
     for (int ie=0; ie<numEBrem; ++ie) {
@@ -541,19 +541,19 @@ void BuildElementSelector(double minEKin, double maxEKin, int numBinsPerDecade, 
 }
 
 int InitElementSelectorEnergyGrid(int binsperdecade, double* egrid, double mine, double maxe, double& logMinEnergy, double& invLEDelta) {
-  const double invlog106 = 1.0/(6.0*std::log(10.0));
-  int numEnergyBins = (int)(binsperdecade*std::log(maxe/mine)*invlog106);
+  const double invlog106 = 1.0/(6.0*log(10.0));
+  int numEnergyBins = (int)(binsperdecade*log(maxe/mine)*invlog106);
   if (numEnergyBins<3) {
     numEnergyBins = 3;
   }
   ++numEnergyBins;
-  double delta = std::log(maxe/mine)/(numEnergyBins-1.0);
-  logMinEnergy = std::log(mine);
+  double delta = log(maxe/mine)/(numEnergyBins-1.0);
+  logMinEnergy = log(mine);
   invLEDelta   = 1.0/delta;
   egrid[0]     = mine;
   egrid[numEnergyBins-1] = maxe;
   for (int i=1; i<numEnergyBins-1; ++i) {
-    egrid[i] = std::exp(logMinEnergy+i*delta);
+    egrid[i] = exp(logMinEnergy+i*delta);
   }
   return numEnergyBins;
 }

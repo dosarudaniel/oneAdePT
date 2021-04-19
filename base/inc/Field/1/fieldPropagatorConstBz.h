@@ -11,20 +11,20 @@
 #include <AdePT/1/BlockData.h>
 #include <AdePT/1/LoopNavigator.h>
 
-#include <Field/ConstBzFieldStepper.h>
+#include <Field/1/ConstBzFieldStepper.h>
 
 // Data structures for statistics of propagation chords
 
 class fieldPropagatorConstBz {
 public:
-  __host__ __device__ fieldPropagatorConstBz(float Bz) { BzValue = Bz; }
-  __host__ __device__ ~fieldPropagatorConstBz() {}
+  fieldPropagatorConstBz(float Bz) { BzValue = Bz; }
+  ~fieldPropagatorConstBz() {}
 
-  __host__ __device__ void stepInField(double kinE, double mass, int charge, double step,
+  void stepInField(double kinE, double mass, int charge, double step,
                                        vecgeom::Vector3D<double> &position, vecgeom::Vector3D<double> &direction);
 
   template <bool Relocate = true>
-  __host__ __device__ double ComputeStepAndPropagatedState(double kinE, double mass, int charge, double physicsStep,
+  double ComputeStepAndPropagatedState(double kinE, double mass, int charge, double physicsStep,
                                                            vecgeom::Vector3D<double> &position,
                                                            vecgeom::Vector3D<double> &direction,
                                                            vecgeom::NavStateIndex const &current_state,
@@ -38,7 +38,7 @@ constexpr double kPushField = 1.e-8 * copcore::units::cm;
 
 // -----------------------------------------------------------------------------
 
-__host__ __device__ void fieldPropagatorConstBz::stepInField(double kinE, double mass, int charge, double step,
+void fieldPropagatorConstBz::stepInField(double kinE, double mass, int charge, double step,
                                                              vecgeom::Vector3D<double> &position,
                                                              vecgeom::Vector3D<double> &direction)
 {
@@ -63,7 +63,7 @@ __host__ __device__ void fieldPropagatorConstBz::stepInField(double kinE, double
 // Determine the step along curved trajectory for charged particles in a field.
 //  ( Same name as as navigator method. )
 template <bool Relocate>
-__host__ __device__ double fieldPropagatorConstBz::ComputeStepAndPropagatedState(
+double fieldPropagatorConstBz::ComputeStepAndPropagatedState(
     double kinE, double mass, int charge, double physicsStep, vecgeom::Vector3D<double> &position,
     vecgeom::Vector3D<double> &direction, vecgeom::NavStateIndex const &current_state,
     vecgeom::NavStateIndex &next_state)
@@ -121,11 +121,11 @@ __host__ __device__ double fieldPropagatorConstBz::ComputeStepAndPropagatedState
       vecgeom::Vector3D<double> chordDir = (1.0 / chordLen) * chordVec;
 
       double move;
-      if (Relocate) {
-        move = LoopNavigator::ComputeStepAndPropagatedState(position, chordDir, chordLen, current_state, next_state);
-      } else {
+      //      if (Relocate) {
+      //        move = LoopNavigator::ComputeStepAndPropagatedState(position, chordDir, chordLen, current_state, next_state);
+      //     } else {
         move = LoopNavigator::ComputeStepAndNextVolume(position, chordDir, chordLen, current_state, next_state);
-      }
+      //  }
 
       fullChord = (move == chordLen);
       if (fullChord) {

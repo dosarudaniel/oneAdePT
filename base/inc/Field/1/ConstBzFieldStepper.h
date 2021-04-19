@@ -53,7 +53,8 @@ public:
    * output: new position, new direction of particle
    */
   template <typename BaseType, typename BaseIType>
-  inline __attribute__((always_inline)) VECCORE_ATT_HOST_DEVICE void DoStep(
+  //inline __attribute__((always_inline)) VECCORE_ATT_HOST_DEVICE void DoStep(
+  inline VECCORE_ATT_HOST_DEVICE void DoStep(
       BaseType const & /*posx*/, BaseType const & /*posy*/, BaseType const & /*posz*/, BaseType const & /*dirx*/,
       BaseType const & /*diry*/, BaseType const & /*dirz*/, BaseIType const & /*charge*/, BaseType const & /*momentum*/,
       BaseType const & /*step*/, BaseType & /*newsposx*/, BaseType & /*newposy*/, BaseType & /*newposz*/,
@@ -82,7 +83,8 @@ public:
  * output: new position, new direction of particle
  */
 template <typename BaseDType, typename BaseIType>
-inline __attribute__((always_inline)) void ConstBzFieldStepper::DoStep(
+//inline __attribute__((always_inline)) void ConstBzFieldStepper::DoStep(
+inline void ConstBzFieldStepper::DoStep(
     BaseDType const &x0, BaseDType const &y0, BaseDType const &z0, BaseDType const &dx0, BaseDType const &dy0,
     BaseDType const &dz0, BaseIType const &charge, BaseDType const &momentum, BaseDType const &step, BaseDType &x,
     BaseDType &y, BaseDType &z, BaseDType &dx, BaseDType &dy, BaseDType &dz) const
@@ -100,7 +102,9 @@ inline __attribute__((always_inline)) void ConstBzFieldStepper::DoStep(
 
   BaseDType cosphi;
   BaseDType sinphi;
-  sincos(phi, &sinphi, &cosphi);
+  //sincos(phi, &sinphi, &cosphi);
+  cosphi = cos(phi);
+  sinphi = sin(phi);
 
   x = x0 + R * (-sina - (-cosphi * sina - sinphi * cosa));
   y = y0 + R * (cosa - (-sinphi * sina + cosphi * cosa));

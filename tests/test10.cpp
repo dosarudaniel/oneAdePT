@@ -1,11 +1,10 @@
 #include <CL/sycl.hpp>
-
 #include <iostream>
 #include <stdlib.h>
 
 void kernel(double *d)
 {
-  *d = std::log(*d);
+  *d = sycl::log(*d);
 }
 
 int main(void)

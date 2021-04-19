@@ -220,7 +220,7 @@ void G4HepEmSBTest(const G4MaterialCutsCouple* g4MatCut, G4double ekin, G4double
   G4HepEmTrack*         thePrimaryTrack = theTLData->GetPrimaryElectronTrack()->GetTrack();
   double charge      = iselectron ? -1.0 : 1.0;
   thePrimaryTrack->SetCharge(charge);
-  const double lekin = std::log(ekin);
+  const double lekin = log(ekin);
   thePrimaryTrack->SetEKin(ekin, lekin);
   const int    g4IMC = g4MatCut->GetIndex();
   const int hepEmIMC = theRunMgr->GetHepEmData()->fTheMatCutData->fG4MCIndexToHepEmMCIndex[g4IMC];

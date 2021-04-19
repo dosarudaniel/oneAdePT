@@ -111,14 +111,16 @@ public:
     fLogEKin = lekin;
   }
 
-
-
   G4HepEmHostDevice
   double  GetEKin()    const { return fEKin; }
   G4HepEmHostDevice
   double  GetLogEKin() {
     if (fLogEKin > 99.0) {
+#if (defined( __SYCL_DEVICE_ONLY__))
+      fLogEKin = (fEKin > 0.) ? sycl::log(fEKin) : -30;
+#else
       fLogEKin = (fEKin > 0.) ? std::log(fEKin) : -30;
+#endif      
     }
     return fLogEKin;
   }

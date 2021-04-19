@@ -35,6 +35,12 @@
 #include <stdio.h>
 #include <chrono>
 
+#if (defined( __SYCL_DEVICE_ONLY__))
+#define log sycl::log
+#else
+#define log std::log
+#endif
+
 // Constant data structures from G4HepEm accessed by the kernels.
 // (defined in example9.cu)
 
