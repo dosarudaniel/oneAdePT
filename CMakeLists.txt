@@ -60,22 +60,8 @@ set(CMAKE_CXX_COMPILER "${SYCL_ROOT}/bin/dpcpp")
 #       "-Wno-unknown-cuda-version")
       
 set(EXTRA_FLAGS "-I../base/inc" "-g"
-	"-std=c++20"
-	"-stdlib=libstdc++"
-	"-Wno-unknown-cuda-version"
-	"-O2"
-	"-fcxx-exceptions"
-	"-fdenormal-fp-math=preserve-sign,preserve-sign"
-	"-fexceptions"
+	#	"-std=c++20"
 	"-ffast-math"
-	"-ffinite-math-only"
-	"-ffp-contract=fast"
-	"-fgnuc-version=4.2.1"
-	"-fheinous-gnu-extensions"
-	"-fno-rounding-math"
-	"-fno-signed-zeros"
-	"-fno-split-dwarf-inlining"
-	"-freciprocal-math"
 	)
 
 build_tests("${ONEAPI_UNIT_TESTS_BASE}")
