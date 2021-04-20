@@ -44,6 +44,7 @@ set(ONEAPI_UNIT_TESTS_BASE
   test8.cpp                    # converted (and modified) test_atomic.cu using oneAtomic.h
   test9.cpp                    # converted and modified  test_track_block.cu
   test10.cpp		       # conversion of cufisher_price_v2 .dp.cpp
+  test11.cpp 	                # test log in sycl kernel
   )
 
 set(SYCL_INCLUDE_DIR "${SYCL_ROOT}/include/")
