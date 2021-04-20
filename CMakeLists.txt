@@ -27,9 +27,24 @@ set(SYCL_FLAGS
   	"-fsycl"
   	"-fsycl-targets=nvptx64-nvidia-cuda-sycldevice"
   	"-fsycl-unnamed-lambda"
-  	"-std=c++20"
+  	"-std=c++17"
   	"-stdlib=libstdc++"
-        "-Wno-unknown-cuda-version")
+    "-Wno-unknown-cuda-version"
+    "-sycl-std=2020"
+    "-emit-obj"
+    "-disable-free"
+    "-disable-llvm-verifier"
+    "-discard-value-names"
+    "-fveclib=SVML"
+    "-fno-signed-zeros"
+    "-freciprocal-math"
+    "-fdenormal-fp-math=preserve-sign,preserve-sign"
+    "-ffp-contract=fast"
+    "-fno-rounding-math"
+    "-ffast-math"
+    "-ffinite-math-only"
+    "-fno-split-dwarf-inlining"
+    )
       
 set(EXTRA_FLAGS "-D_ONEADEPT_" "-DNDEBUG" "-DROOT_NO_INT128" "-DG4HepEm_CUDA_BUILD" "-I${CMAKE_SOURCE_DIR}/../local/include" )
 
