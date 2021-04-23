@@ -1,8 +1,6 @@
 #include <CL/sycl.hpp>
 
-extern SYCL_EXTERNAL double stepInField(double kinE, double mass, int
-charge);
-
+extern SYCL_EXTERNAL double stepInField(double kinE, double mass, int charge); // Check field.cu file
 
 void kernel(double *step)
 {
@@ -36,6 +34,4 @@ int main(void)
   std::cout << "   device: " << d_dev << std::endl;
 
   sycl::free(d_dev_ptr, q_ct1);
-
 }
-
