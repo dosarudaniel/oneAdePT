@@ -1,6 +1,13 @@
 #include <CL/sycl.hpp>
 
-extern SYCL_EXTERNAL double stepInField(double kinE, double mass, int charge); // Check field.cu file
+// extern SYCL_EXTERNAL double stepInField(double kinE, double mass, int charge); // Check field.cu file
+
+//QUESTION: could this function be placed in field.cu, compiled with nvcc and called in the main SYCL program below ?
+
+/*__host__ __device__ */ double stepInField(double kinE, double mass, int charge) 
+{
+   return(kinE*mass*charge);
+}
 
 void kernel(double *step)
 {
@@ -15,7 +22,6 @@ int main(void)
   std::cout <<  "Running on "
         	<< q_ct1.get_device().get_info<cl::sycl::info::device::name>()
         	<< "\n";
-
  
   double *d_dev_ptr;
   d_dev_ptr  = sycl::malloc_device<double>(1, q_ct1);
