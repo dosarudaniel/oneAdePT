@@ -305,6 +305,13 @@ template void TransportElectrons<true>(Track *electrons, const adept::MParray *a
                struct G4HepEmParameters *g4HepEmPars,
                struct G4HepEmData *g4HepEmData);
 
+
+int main(int argc, char *argv[])
+{
+
+}
+
+
 template void TransportElectrons<false>(Track *electrons, const adept::MParray *active,
               Secondaries secondaries, adept::MParray *activeQueue,
               adept::MParray *relocateQueue,GlobalScoring *scoring,
