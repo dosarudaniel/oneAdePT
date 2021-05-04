@@ -142,10 +142,9 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
         const double phi  = k2Pi * currentTrack.Uniform();
         double sinPhi, cosPhi;
 
-        sinPhi = sycl::sincos(
-            phi,
-            sycl::make_ptr<double, sycl::access::address_space::global_space>(
-                &cosPhi));
+        cosPhi = sycl::cos(phi);
+        sinPhi = sycl::sin(phi);
+        //sinPhi = sycl::sincos(phi, sycl::make_ptr<double, sycl::access::address_space::global_space>(&cosPhi));
 
         gamma1.InitAsSecondary(currentTrack);
         gamma1.energy = copcore::units::kElectronMassC2;
@@ -305,11 +304,6 @@ template void TransportElectrons<true>(Track *electrons, const adept::MParray *a
                struct G4HepEmParameters *g4HepEmPars,
                struct G4HepEmData *g4HepEmData);
 
-
-int main(int argc, char *argv[])
-{
-
-}
 
 
 template void TransportElectrons<false>(Track *electrons, const adept::MParray *active,

@@ -141,10 +141,12 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
         These two calls do not provide exactly the same functionality. Check the
         potential precision and/or performance issues for the generated code.
         */
-        sinPhi = sycl::sincos(
-            phi,
-            sycl::make_ptr<double, sycl::access::address_space::global_space>(
-                &cosPhi));
+        sinPhi = sycl::sin(phi);
+        cosPhi = sycl::cos(phi);
+        // sinPhi = sycl::sincos(
+        //     phi,
+        //     sycl::make_ptr<double, sycl::access::address_space::global_space>(
+        //         &cosPhi));
 
         gamma1.InitAsSecondary(/*parent=*/currentTrack);
         gamma1.energy = copcore::units::kElectronMassC2;
