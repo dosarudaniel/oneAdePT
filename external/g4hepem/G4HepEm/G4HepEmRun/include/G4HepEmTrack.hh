@@ -16,6 +16,26 @@
 
 #include <cmath>
 
+#if (defined( __SYCL_DEVICE_ONLY__))
+#define log sycl::log
+#define exp sycl::exp
+#define cos sycl::cos
+#define sin sycl::sin
+#define pow sycl::pow
+#define frexp sycl::frexp
+#define ldexp sycl::ldexp
+#define modf sycl::modf
+#else
+#define log std::log
+#define exp std::exp
+#define cos std::cos
+#define sin std::sin
+#define pow std::pow
+#define frexp std::frexp
+#define ldexp std::ldexp
+#define modf std::modf
+#endif
+
 class G4HepEmTrack {
 
 public:
@@ -116,11 +136,7 @@ public:
   G4HepEmHostDevice
   double  GetLogEKin() {
     if (fLogEKin > 99.0) {
-#if (defined( __SYCL_DEVICE_ONLY__))
-      fLogEKin = (fEKin > 0.) ? sycl::log(fEKin) : -30;
-#else
-      fLogEKin = (fEKin > 0.) ? std::log(fEKin) : -30;
-#endif      
+      fLogEKin = (fEKin > 0.) ? log(fEKin) : -30;    
     }
     return fLogEKin;
   }

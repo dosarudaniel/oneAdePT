@@ -302,7 +302,7 @@ double G4HepEmElectronManager::ComputeMacXsecAnnihilation(const double ekin, con
   const double gam   = tau + 1.0;
   const double gam2  = gam*gam;
   const double bg2   = tau * (tau+2.0);
-  const double bg    = std::sqrt(bg2);
+  const double bg    = sqrt(bg2);
   return electronDensity*kPir02*((gam2+4.*gam+1.)*log(gam+bg) - (gam+3.)*bg) / (bg2*(gam+1.));
 }
 

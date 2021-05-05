@@ -108,16 +108,16 @@ double SampleETransferBhabha(const double elCut, const double primEkin, G4HepEmR
 
 void SampleDirectionsIoni(const double thePrimEkin, const double deltaEkin, double* theSecElecDir, double* thePrimElecDir, G4HepEmRandomEngine* rnge) {
     const double elInitETot = thePrimEkin + kElectronMassC2;
-    const double elInitPTot = std::sqrt(thePrimEkin * (elInitETot + kElectronMassC2));
-    const double  deltaPTot = std::sqrt(deltaEkin * (deltaEkin + 2.0 * kElectronMassC2));
+    const double elInitPTot = sqrt(thePrimEkin * (elInitETot + kElectronMassC2));
+    const double  deltaPTot = sqrt(deltaEkin * (deltaEkin + 2.0 * kElectronMassC2));
     const double       cost = deltaEkin * (elInitETot + kElectronMassC2) / (deltaPTot * elInitPTot);
     // check cosTheta limit
     const double   cosTheta = G4HepEmMax(-1.0, G4HepEmMin(cost, 1.0));
-    const double   sinTheta = std::sqrt((1.0 - cosTheta) * (1.0 + cosTheta));
+    const double   sinTheta = sqrt((1.0 - cosTheta) * (1.0 + cosTheta));
     const double        phi = k2Pi * rnge->flat();     // spherical symmetry
     //
-    theSecElecDir[0]  = sinTheta * std::cos(phi);
-    theSecElecDir[1]  = sinTheta * std::sin(phi);
+    theSecElecDir[0]  = sinTheta * cos(phi);
+    theSecElecDir[1]  = sinTheta * sin(phi);
     theSecElecDir[2]  = cosTheta;
     // rotate to refernce frame (G4HepEmRunUtils function) to get it in lab. frame
     RotateToReferenceFrame(theSecElecDir, thePrimElecDir);
@@ -127,7 +127,7 @@ void SampleDirectionsIoni(const double thePrimEkin, const double deltaEkin, doub
     thePrimElecDir[1] = elInitPTot * thePrimElecDir[1] - deltaPTot * theSecElecDir[1];
     thePrimElecDir[2] = elInitPTot * thePrimElecDir[2] - deltaPTot * theSecElecDir[2];
     // normalisation
-    const double  norm = 1.0 / std::sqrt(thePrimElecDir[0] * thePrimElecDir[0] + thePrimElecDir[1] * thePrimElecDir[1] + thePrimElecDir[2] * thePrimElecDir[2]);
+    const double  norm = 1.0 / sqrt(thePrimElecDir[0] * thePrimElecDir[0] + thePrimElecDir[1] * thePrimElecDir[1] + thePrimElecDir[2] * thePrimElecDir[2]);
     thePrimElecDir[0] *= norm;
     thePrimElecDir[1] *= norm;
     thePrimElecDir[2] *= norm;
