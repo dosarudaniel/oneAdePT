@@ -2,9 +2,27 @@
 
 extern SYCL_EXTERNAL double stepInField(double kinE, double mass, int charge); // Check field.cu file
 
+#if (defined( __SYCL_DEVICE_ONLY__))
+#define log sycl::log
+#define exp sycl::exp
+#define cos sycl::cos
+#define sin sycl::sin
+#define pow sycl::pow
+#else
+#define log std::log
+#define exp std::exp
+#define cos std::cos
+#define sin std::sin
+#define pow std::pow
+#endif
+
 void kernel(double *step)
 {
-  *step =  stepInField(6.0f, 7.0f,1);
+  *step =  log(*step);
+  *step =  exp(*step);
+  *step =  cos(*step);
+  *step =  sin(*step);
+  *step =  pow(*step, 1.2);
 }
 
 int main(void)
