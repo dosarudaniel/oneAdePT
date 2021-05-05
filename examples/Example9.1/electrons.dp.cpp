@@ -2,28 +2,53 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include <CL/sycl.hpp>
-//#include <dpct/dpct.hpp>
 #include "example9.dp.hpp"
 #include <stdlib.h>
 
 #include <Field/1/fieldPropagatorConstBz.h>
-
 #include <CopCore/1/PhysicalConstants.h>
-
 #include <G4HepEmElectronManager.hh>
 #include <G4HepEmElectronTrack.hh>
 #include <G4HepEmElectronInteractionBrem.hh>
 #include <G4HepEmElectronInteractionIoni.hh>
 #include <G4HepEmPositronInteractionAnnihilation.hh>
 
+
+// #if (defined( __SYCL_DEVICE_ONLY__))
+// #define log sycl::log
+// #define cos sycl::cos
+// #define sin sycl::sin
+// #define exp sycl::exp
+// #define sqrt sycl::sqrt
+// #else
+// #define log std::log
+// #define cos std::cos
+// #define sin std::sin
+// #define exp std::exp
+// #define sqrt std::sqrt
+// #endif
+
 #if (defined( __SYCL_DEVICE_ONLY__))
 #define log sycl::log
 #define exp sycl::exp
+#define cos sycl::cos
+#define sin sycl::sin
+#define pow sycl::pow
+#define frexp sycl::frexp
+#define ldexp sycl::ldexp
+#define modf sycl::modf
+#define fabs sycl::fabs
 #else
 #define log std::log
 #define exp std::exp
+#define cos std::cos
+#define sin std::sin
+#define pow std::pow
+#define frexp std::frexp
+#define ldexp std::ldexp
+#define modf std::modf
+#define fabs std::fabs
 #endif
-
 // Pull in implementation.
 
 #include <G4HepEmRunUtils.icc>
@@ -138,12 +163,12 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
             .fetch_add(2);
 
         const double cost = 2 * currentTrack.Uniform() - 1;
-        const double sint = sycl::sqrt(1 - cost * cost);
+        const double sint = sqrt(1 - cost * cost);
         const double phi  = k2Pi * currentTrack.Uniform();
         double sinPhi, cosPhi;
 
-        cosPhi = sycl::cos(phi);
-        sinPhi = sycl::sin(phi);
+        cosPhi = cos(phi);
+        sinPhi = sin(phi);
         //sinPhi = sycl::sincos(phi, sycl::make_ptr<double, sycl::access::address_space::global_space>(&cosPhi));
 
         gamma1.InitAsSecondary(currentTrack);
@@ -208,9 +233,9 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
       double dirPrimary[] = {currentTrack.dir.x(), currentTrack.dir.y(), currentTrack.dir.z()};
       double dirSecondary[3];
 
-      /*
-       *ERROR*      SampleDirectionsIoni(energy, deltaEkin, dirSecondary, dirPrimary, &rnge);
-       */
+      // ERROR
+      SampleDirectionsIoni(energy, deltaEkin, dirSecondary, dirPrimary, &rnge);
+      
 
       Track &secondary = secondaries.electrons.NextTrack();
 

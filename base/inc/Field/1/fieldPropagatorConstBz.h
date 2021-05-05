@@ -13,6 +13,28 @@
 
 #include <Field/1/ConstBzFieldStepper.h>
 
+#if (defined( __SYCL_DEVICE_ONLY__))
+#define log sycl::log
+#define exp sycl::exp
+#define cos sycl::cos
+#define sin sycl::sin
+#define pow sycl::pow
+#define frexp sycl::frexp
+#define ldexp sycl::ldexp
+#define modf sycl::modf
+#define fabs sycl::fabs
+#else
+#define log std::log
+#define exp std::exp
+#define cos std::cos
+#define sin std::sin
+#define pow std::pow
+#define frexp std::frexp
+#define ldexp std::ldexp
+#define modf std::modf
+#define fabs std::fabs
+#endif
+
 // Data structures for statistics of propagation chords
 
 class fieldPropagatorConstBz {
@@ -72,7 +94,7 @@ double fieldPropagatorConstBz::ComputeStepAndPropagatedState(
   double momentumXYMag =
       momentumMag * sqrt((1. - direction[2]) * (1. + direction[2])); // only XY component matters for the curvature
 
-  double curv = std::fabs(ConstBzFieldStepper::kB2C * charge * BzValue) / (momentumXYMag + 1.0e-30); // norm for step
+  double curv = fabs(ConstBzFieldStepper::kB2C * charge * BzValue) / (momentumXYMag + 1.0e-30); // norm for step
 
   constexpr double gEpsilonDeflect = 1.E-2 * copcore::units::cm;
 

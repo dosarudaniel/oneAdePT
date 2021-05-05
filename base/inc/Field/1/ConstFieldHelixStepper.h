@@ -12,6 +12,29 @@
 #ifndef CONSTFIELDHELIXSTEPPER_H_
 #define CONSTFIELDHELIXSTEPPER_H_
 
+#if (defined( __SYCL_DEVICE_ONLY__))
+#define log sycl::log
+#define exp sycl::exp
+#define cos sycl::cos
+#define sin sycl::sin
+#define pow sycl::pow
+#define frexp sycl::frexp
+#define ldexp sycl::ldexp
+#define modf sycl::modf
+#define fabs sycl::fabs
+#else
+#define log std::log
+#define exp std::exp
+#define cos std::cos
+#define sin std::sin
+#define pow std::pow
+#define frexp std::frexp
+#define ldexp std::ldexp
+#define modf std::modf
+#define fabs std::fabs
+#endif
+
+
 #include "VecGeom/base/Global.h"
 // Needed for Vector3D
 
