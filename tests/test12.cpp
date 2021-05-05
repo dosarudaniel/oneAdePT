@@ -5,7 +5,7 @@ extern SYCL_EXTERNAL double stepInField(double kinE, double mass, int charge); /
 #if (defined( __SYCL_DEVICE_ONLY__))
 #define log sycl::log
 #define exp sycl::exp
-#define cos sycl::cos
+// #define cos sycl::cos
 #define sin sycl::sin
 #define pow sycl::pow
 #define frexp sycl::frexp
@@ -14,7 +14,7 @@ extern SYCL_EXTERNAL double stepInField(double kinE, double mass, int charge); /
 #else
 #define log std::log
 #define exp std::exp
-#define cos std::cos
+//#define cos std::cos
 #define sin std::sin
 #define pow std::pow
 #define frexp std::frexp
