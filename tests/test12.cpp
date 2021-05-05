@@ -8,12 +8,18 @@ extern SYCL_EXTERNAL double stepInField(double kinE, double mass, int charge); /
 #define cos sycl::cos
 #define sin sycl::sin
 #define pow sycl::pow
+#define frexp sycl::frexp
+#define ldexp sycl::ldexp
+#define modf sycl::modf
 #else
 #define log std::log
 #define exp std::exp
 #define cos std::cos
 #define sin std::sin
 #define pow std::pow
+#define frexp std::frexp
+#define ldexp std::ldexp
+#define modf std::modf
 #endif
 
 void kernel(double *step)
@@ -23,6 +29,15 @@ void kernel(double *step)
   *step =  cos(*step);
   *step =  sin(*step);
   *step =  pow(*step, 1.2);
+  bool flag = std::isinf(*step);
+  double res = std::sqrt(*step);
+  int exponent;
+  frexp(*step, &exponent);
+  ldexp(*step, 3);
+  double iptr;
+  modf(*step, &iptr);
+  *step = fabs(*step);
+
 }
 
 int main(void)
