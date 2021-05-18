@@ -105,12 +105,15 @@ int main(int argc, char *argv[])
 
   InitGeant4();
 
-#ifdef VECGEOM_GDML
-  vecgeom::GeoManager::Instance().SetTransformationCacheDepth(cache_depth);
-  // The vecgeom millimeter unit is the last parameter of vgdml::Frontend::Load
-  bool load = vgdml::Frontend::Load(gdml_name.c_str(), false, copcore::units::mm);
-  if (!load) return 3;
-#endif
+
+// ERROR adding symbols: DSO missing from command line
+// clang-13: error: linker command failed with exit code 1
+// #ifdef VECGEOM_GDML
+//   vecgeom::GeoManager::Instance().SetTransformationCacheDepth(cache_depth);
+//   // The vecgeom millimeter unit is the last parameter of vgdml::Frontend::Load
+//   bool load = vgdml::Frontend::Load(gdml_name.c_str(), false, copcore::units::mm);
+//   if (!load) return 3;
+// #endif
 
   const vecgeom::VPlacedVolume *world = vecgeom::GeoManager::Instance().GetWorld();
 

@@ -114,11 +114,18 @@ double fieldPropagatorConstBz::ComputeStepAndPropagatedState(
   const double epsilon_step = 1.0e-7 * physicsStep; // Ignore remainder if < e_s * PhysicsStep
 
   if (charge == 0) {
-    if (Relocate) {
-      stepDone = LoopNavigator::ComputeStepAndPropagatedState(position, direction, remains, current_state, next_state);
-    } else {
-      stepDone = LoopNavigator::ComputeStepAndNextVolume(position, direction, remains, current_state, next_state);
-    }
+
+    /*
+    undefined reference to symbol 'cudaFree@@libcudart.so.11.0'
+    /usr/local/cuda-11.1/lib64/libcudart.so.11.0: error adding symbols: DSO missing from command line
+    clang-13: error: linker command failed with exit code 1 (
+    */
+    
+    // if (Relocate) {
+    //   stepDone = LoopNavigator::ComputeStepAndPropagatedState(position, direction, remains, current_state, next_state);
+    // } else {
+    //   stepDone = LoopNavigator::ComputeStepAndNextVolume(position, direction, remains, current_state, next_state);
+    // }
     position += (stepDone + kPushField) * direction;
   } else {
     bool fullChord = false;
@@ -146,7 +153,7 @@ double fieldPropagatorConstBz::ComputeStepAndPropagatedState(
       //      if (Relocate) {
       //        move = LoopNavigator::ComputeStepAndPropagatedState(position, chordDir, chordLen, current_state, next_state);
       //     } else {
-        move = LoopNavigator::ComputeStepAndNextVolume(position, chordDir, chordLen, current_state, next_state);
+      //  move = LoopNavigator::ComputeStepAndNextVolume(position, chordDir, chordLen, current_state, next_state);
       //  }
 
       fullChord = (move == chordLen);

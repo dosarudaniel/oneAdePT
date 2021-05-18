@@ -36,7 +36,7 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
                         struct G4HepEmParameters *g4HepEmPars_p,
                         struct G4HepEmData *g4HepEmData_p)
 {
-  /*
+  
   int activeSize = active->size();
   for (int i = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
                item_ct1.get_local_id(2);
@@ -44,11 +44,13 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
        i += item_ct1.get_local_range().get(2) * item_ct1.get_group_range(2)) {
     const int slot      = (*active)[i];
     Track &currentTrack = gammas[slot];
-    auto volume         = currentTrack.currentState.Top();
-    if (volume == nullptr) {
-      // The particle left the world, kill it by not enqueuing into activeQueue.
-      continue;
-    }
+
+    // // ERROR ptxas fatal   : Unresolved extern function '_ZN7vecgeom20globaldevicegeomdata11GetNavIndexEv'
+    // auto volume         = currentTrack.currentState.Top();
+    // if (volume == nullptr) {
+    //   // The particle left the world, kill it by not enqueuing into activeQueue.
+    //   continue;
+    // }
 
     // Init a track with the needed data to call into G4HepEm.
     G4HepEmTrack emTrack;
@@ -77,9 +79,10 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
     // also need to carry them over!
 
     // Check if there's a volume boundary in between.
-    double geometryStepLength =
-        LoopNavigator::ComputeStepAndNextVolume(currentTrack.pos, currentTrack.dir, geometricalStepLengthFromPhysics,
-                                                currentTrack.currentState, currentTrack.nextState);
+    double geometryStepLength = 1.0;
+        // ERROR ptxas fatal   : Unresolved extern function '_ZN7vecgeom4cuda13NavStateIndex13TopMatrixImplEjRNS0_16Transformation3DE'
+        // LoopNavigator::ComputeStepAndNextVolume(currentTrack.pos, currentTrack.dir, geometricalStepLengthFromPhysics,
+        //                                         currentTrack.currentState, currentTrack.nextState);
     currentTrack.pos += (geometryStepLength + kPush) * currentTrack.dir;
 
     if (currentTrack.nextState.IsOnBoundary()) {
@@ -102,7 +105,8 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
       activeQueue->push_back(slot);
       //relocateQueue->push_back(slot);
 
-      //LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
+      // ERROR: ptxas fatal   : Unresolved extern function '_ZN7vecgeom4cuda13NavStateIndex13TopMatrixImplEjRNS0_16Transformation3DE'
+      // LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
       
       // Move to the next boundary.
       currentTrack.SwapStates();
@@ -202,5 +206,5 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
     }
     }
   }
-  */
+  
 }

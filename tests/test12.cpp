@@ -24,20 +24,20 @@ extern SYCL_EXTERNAL double stepInField(double kinE, double mass, int charge); /
 
 void kernel(double *step)
 {
-  *step =  log(*step);
-  *step =  exp(*step);
-  *step =  cos(*step);
-  *step =  sin(*step);
-  *step =  pow(*step, 1.2);
-  bool flag = std::isinf(*step);
-  double res = std::sqrt(*step);
-  int exponent;
-  frexp(*step, &exponent);
-  ldexp(*step, 3);
-  double iptr;
-  modf(*step, &iptr);
-  *step = fabs(*step);
-
+  // *step =  log(*step);
+  // *step =  exp(*step);
+  // *step =  cos(*step);
+  // *step =  sin(*step);
+  // *step =  pow(*step, 1.2);
+  // bool flag = std::isinf(*step);
+  // double res = std::sqrt(*step);
+  // int exponent;
+  // frexp(*step, &exponent);
+  // ldexp(*step, 3);
+  // double iptr;
+  // modf(*step, &iptr);
+  // *step = fabs(*step);
+  *step = stepInField(2.0, 3.0, 1);
 }
 
 int main(void)

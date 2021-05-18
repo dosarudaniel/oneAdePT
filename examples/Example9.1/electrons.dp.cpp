@@ -13,21 +13,6 @@
 #include <G4HepEmElectronInteractionIoni.hh>
 #include <G4HepEmPositronInteractionAnnihilation.hh>
 
-
-// #if (defined( __SYCL_DEVICE_ONLY__))
-// #define log sycl::log
-// #define cos sycl::cos
-// #define sin sycl::sin
-// #define exp sycl::exp
-// #define sqrt sycl::sqrt
-// #else
-// #define log std::log
-// #define cos std::cos
-// #define sin std::sin
-// #define exp std::exp
-// #define sqrt std::sqrt
-// #endif
-
 #if (defined( __SYCL_DEVICE_ONLY__))
 #define log sycl::log
 #define exp sycl::exp
@@ -38,6 +23,7 @@
 #define ldexp sycl::ldexp
 #define modf sycl::modf
 #define fabs sycl::fabs
+#define abs sycl::abs
 #else
 #define log std::log
 #define exp std::exp
@@ -48,6 +34,7 @@
 #define ldexp std::ldexp
 #define modf std::modf
 #define fabs std::fabs
+#define abs std::abs
 #endif
 // Pull in implementation.
 
@@ -83,11 +70,15 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 
     const int slot      = (*active)[i];
     Track &currentTrack = electrons[slot];
-    auto volume         = currentTrack.currentState.Top();
-    if (volume == nullptr) {
-      // The particle left the world, kill it by not enqueuing into activeQueue.
-      continue;
-    }
+
+    // ERROR ptxas fatal   : Unresolved extern function '_ZN7vecgeom20globaldevicegeomdata11GetNavIndexEv'
+    // auto volume         = currentTrack.currentState.Top();
+
+
+    // if (volume == nullptr) {
+    //   // The particle left the world, kill it by not enqueuing into activeQueue.
+    //   continue;
+    // }
 
     // Init a track with the needed data to call into G4HepEm.
     G4HepEmElectronTrack elTrack;
@@ -125,8 +116,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 
     // Check if there's a volume boundary in between.
 
-    // *ERROR*
-    double geometryStepLength = 
+    double geometryStepLength =
         fieldPropagatorBz.ComputeStepAndPropagatedState<false>(
         currentTrack.energy, Mass, Charge, geometricalStepLengthFromPhysics, currentTrack.pos, currentTrack.dir,
         currentTrack.currentState, currentTrack.nextState);
@@ -191,7 +181,10 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
       activeQueue->push_back(slot);
       // relocateQueue->push_back(slot);
 
-      //LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
+      // ERROR: Unresolved extern function '_ZN7vecgeom4cuda13NavStateIndex13TopMatrixImplEjRNS0_16Transformation3DE'
+      //     dadosaru@pcphsft106$ c++filt _ZN7vecgeom4cuda13NavStateIndex13TopMatrixImplEjRNS0_16Transformation3DE
+      //     vecgeom::cuda::NavStateIndex::TopMatrixImpl(unsigned int, vecgeom::cuda::Transformation3D&)
+      // LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
 
       // Move to the next boundary.
       currentTrack.SwapStates();
@@ -233,10 +226,8 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
       double dirPrimary[] = {currentTrack.dir.x(), currentTrack.dir.y(), currentTrack.dir.z()};
       double dirSecondary[3];
 
-      // ERROR
       SampleDirectionsIoni(energy, deltaEkin, dirSecondary, dirPrimary, &rnge);
       
-
       Track &secondary = secondaries.electrons.NextTrack();
 
 
@@ -267,8 +258,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
       double dirPrimary[] = {currentTrack.dir.x(), currentTrack.dir.y(), currentTrack.dir.z()};
       double dirSecondary[3];
 
-      // *ERROR*      SampleDirectionsBrem(energy, deltaEkin, dirSecondary, dirPrimary, &rnge);
-
+      SampleDirectionsBrem(energy, deltaEkin, dirSecondary, dirPrimary, &rnge);
       
       Track &gamma = secondaries.gammas.NextTrack();
 
@@ -293,8 +283,8 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
       double theGamma1Ekin, theGamma2Ekin;
       double theGamma1Dir[3], theGamma2Dir[3];
       
-      // *ERROR*  SampleEnergyAndDirectionsForAnnihilationInFlight(energy, dirPrimary, &theGamma1Ekin, theGamma1Dir, &theGamma2Ekin,
-      //                                                 theGamma2Dir, &rnge);
+      SampleEnergyAndDirectionsForAnnihilationInFlight(energy, dirPrimary, &theGamma1Ekin, theGamma1Dir, &theGamma2Ekin,
+                                                       theGamma2Dir, &rnge);
 
       Track &gamma1 = secondaries.gammas.NextTrack();
       Track &gamma2 = secondaries.gammas.NextTrack();
@@ -320,7 +310,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 
 }
 
-// Instantiate template for electrons and positrons.
+//Instantiate template for electrons and positrons.
 template void TransportElectrons<true>(Track *electrons, const adept::MParray *active,
                Secondaries secondaries, adept::MParray *activeQueue,
 				       adept::MParray *relocateQueue, GlobalScoring *scoring,
@@ -328,8 +318,6 @@ template void TransportElectrons<true>(Track *electrons, const adept::MParray *a
                struct G4HepEmElectronManager *electronManager,
                struct G4HepEmParameters *g4HepEmPars,
                struct G4HepEmData *g4HepEmData);
-
-
 
 template void TransportElectrons<false>(Track *electrons, const adept::MParray *active,
               Secondaries secondaries, adept::MParray *activeQueue,

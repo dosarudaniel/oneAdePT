@@ -26,7 +26,7 @@ set(SYCL_LIB "${SYCL_ROOT}/lib/libsycl.so")
 set(SYCL_FLAGS
         "-fsycl"
         "-fsycl-unnamed-lambda"
-        "-fsycl-targets=nvptx64-nvidia-cuda-sycldevice,spir64_x86_64-unknown-unknown-sycldevice"
+        "-fsycl-targets=nvptx64-nvidia-cuda-sycldevice"
         "-Xsycl-target-backend=nvptx64-nvidia-cuda-sycldevice"
         "--cuda-gpu-arch=sm_61"
         "-std=c++20"
@@ -68,6 +68,7 @@ endif()
 add_subdirectory(external)
 
 add_subdirectory(examples)
+add_subdirectory(example-02)
 
 add_subdirectory(tests)
 
