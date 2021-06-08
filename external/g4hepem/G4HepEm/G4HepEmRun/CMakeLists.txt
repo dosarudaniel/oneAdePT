@@ -17,7 +17,8 @@ add_library(${PROJECT_NAME}::g4HepEmRun ALIAS g4HepEmRun)
 target_compile_features(g4HepEmRun PUBLIC cxx_std_${CMAKE_CXX_STANDARD})
 target_include_directories(g4HepEmRun PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>
+  ${SYCL_ROOT}/include/sycl)
 target_link_libraries(g4HepEmRun g4HepEmData ${G4HepEm_CLHEP_TARGET}) # only rng is used from G4 at run
 
 ## ----------------------------------------------------------------------------

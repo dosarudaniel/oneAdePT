@@ -23,11 +23,12 @@ add_library(${PROJECT_NAME}::g4HepEm ALIAS g4HepEm)
 
 target_compile_features(g4HepEm PUBLIC cxx_std_${CMAKE_CXX_STANDARD})
 
+# set(A "${CMAKE_CURRENT_SOURCE_DIR}/include")
+# set(B "${SYCL_ROOT}/include/sycl")
+
 target_include_directories(g4HepEm PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>
-  "${SYCL_ROOT}/include/sycl"
-  )
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>)
 
 target_link_libraries(g4HepEm PUBLIC g4HepEmData g4HepEmInit g4HepEmRun) # ${Geant4_LIBRARIES})
 
