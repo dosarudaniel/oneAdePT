@@ -1,6 +1,7 @@
 
-#include "G4HepEmRunUtils.hh"
+#include <CL/sycl.hpp>
 
+#include "G4HepEmRunUtils.hh"
 #include "G4HepEmMath.hh"
 
 #include <cmath>
@@ -182,7 +183,7 @@ int    FindLowerBinIndex(double* xdata, int num, double x, int step) {
   // Perform a binary search to find the interval val is in
   int ml = -1;
   int mu = num-1;
-  while (abs(mu-ml)>1) {
+  while (sycl::abs(mu-ml)>1) {
     int mav = 0.5*(ml+mu);
     if (x<xdata[step*mav]) {  mu = mav; }
     else                   {  ml = mav; }

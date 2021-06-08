@@ -4,6 +4,11 @@ add_subdirectory(G4HepEmDataJsonIO)
 add_subdirectory(G4HepEmInit)
 add_subdirectory(G4HepEmRun)
 
+if (NOT SYCL_ROOT)
+   set(SYCL_ROOT $ENV{SYCL_ROOT})
+endif()
+
+
 # - Now top level G4HepEm library
 file(GLOB G4HEPEM_headers ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hh)
 file(GLOB G4HEPEM_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc)
@@ -20,7 +25,9 @@ target_compile_features(g4HepEm PUBLIC cxx_std_${CMAKE_CXX_STANDARD})
 
 target_include_directories(g4HepEm PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>
+  "${SYCL_ROOT}/include/sycl"
+  )
 
 target_link_libraries(g4HepEm PUBLIC g4HepEmData g4HepEmInit g4HepEmRun) # ${Geant4_LIBRARIES})
 

@@ -23,7 +23,7 @@
 #define ldexp sycl::ldexp
 #define modf sycl::modf
 #define fabs sycl::fabs
-#define abs sycl::abs
+//#define abs sycl::abs
 #else
 #define log std::log
 #define exp std::exp
@@ -34,7 +34,7 @@
 #define ldexp std::ldexp
 #define modf std::modf
 #define fabs std::fabs
-#define abs std::abs
+//#define abs std::abs
 #endif
 // Pull in implementation.
 
