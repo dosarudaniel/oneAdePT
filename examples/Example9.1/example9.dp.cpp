@@ -203,7 +203,7 @@ SYCL_EXTERNAL void InitPrimaries(ParticleGenerator generator, int particles, dou
 
     track.pos = {0, 0, 0};
     track.dir = {1.0, 0, 0};
-    LoopNavigator::LocatePointIn(world, track.pos, track.currentState, true);
+    // LoopNavigator::LocatePointIn(world, track.pos, track.currentState, true);
     // nextState is initialized as needed.
   }
 }

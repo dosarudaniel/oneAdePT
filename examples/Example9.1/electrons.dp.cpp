@@ -13,21 +13,6 @@
 #include <G4HepEmElectronInteractionIoni.hh>
 #include <G4HepEmPositronInteractionAnnihilation.hh>
 
-
-// #if (defined( __SYCL_DEVICE_ONLY__))
-// #define log sycl::log
-// #define cos sycl::cos
-// #define sin sycl::sin
-// #define exp sycl::exp
-// #define sqrt sycl::sqrt
-// #else
-// #define log std::log
-// #define cos std::cos
-// #define sin std::sin
-// #define exp std::exp
-// #define sqrt std::sqrt
-// #endif
-
 #if (defined( __SYCL_DEVICE_ONLY__))
 #define log sycl::log
 #define exp sycl::exp
@@ -38,6 +23,7 @@
 #define ldexp sycl::ldexp
 #define modf sycl::modf
 #define fabs sycl::fabs
+#define abs sycl::abs
 #else
 #define log std::log
 #define exp std::exp
@@ -48,6 +34,7 @@
 #define ldexp std::ldexp
 #define modf std::modf
 #define fabs std::fabs
+#define abs std::abs
 #endif
 // Pull in implementation.
 
@@ -83,11 +70,11 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 
     const int slot      = (*active)[i];
     Track &currentTrack = electrons[slot];
-    auto volume         = currentTrack.currentState.Top();
-    if (volume == nullptr) {
-      // The particle left the world, kill it by not enqueuing into activeQueue.
-      continue;
-    }
+    // auto volume         = currentTrack.currentState.Top();
+    // if (volume == nullptr) {
+    //   // The particle left the world, kill it by not enqueuing into activeQueue.
+    //   continue;
+    // }
 
     // Init a track with the needed data to call into G4HepEm.
     G4HepEmElectronTrack elTrack;
@@ -126,10 +113,10 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
     // Check if there's a volume boundary in between.
 
     // *ERROR*
-    double geometryStepLength = 
-        fieldPropagatorBz.ComputeStepAndPropagatedState<false>(
-        currentTrack.energy, Mass, Charge, geometricalStepLengthFromPhysics, currentTrack.pos, currentTrack.dir,
-        currentTrack.currentState, currentTrack.nextState);
+    double geometryStepLength = 1.0;
+        // fieldPropagatorBz.ComputeStepAndPropagatedState<false>(
+        // currentTrack.energy, Mass, Charge, geometricalStepLengthFromPhysics, currentTrack.pos, currentTrack.dir,
+        // currentTrack.currentState, currentTrack.nextState);
 				
     if (currentTrack.nextState.IsOnBoundary()) {
       theTrack->SetGStepLength(geometryStepLength);
@@ -234,7 +221,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
       double dirSecondary[3];
 
       // ERROR
-      SampleDirectionsIoni(energy, deltaEkin, dirSecondary, dirPrimary, &rnge);
+      //SampleDirectionsIoni(energy, deltaEkin, dirSecondary, dirPrimary, &rnge);
       
 
       Track &secondary = secondaries.electrons.NextTrack();
