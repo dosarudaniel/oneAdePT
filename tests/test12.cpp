@@ -4,7 +4,10 @@ extern SYCL_EXTERNAL double stepInField(double kinE, double mass, int charge); /
 
 void kernel(double *step)
 {
-  *step = stepInField(2.0, 3.0, 1);
+
+  #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
+     *step = stepInField(2.0, 3.0, 1);
+  #endif
 }
 
 int main(void)
@@ -27,12 +30,6 @@ int main(void)
     });
   }).wait();
 
-  // q_ct1.submit([&](sycl::handler &cgh) {
-  //  cgh.interop_task([=](sycl::interop_handler ih) { 
-  //   kernel(d_dev_ptr);
-  //  });
-  // }).wait();
- 
   double d_dev;
   q_ct1.memcpy(&d_dev, d_dev_ptr, sizeof(double)).wait();
   std::cout << "   device: " << d_dev << std::endl;
