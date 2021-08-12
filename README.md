@@ -3,7 +3,7 @@ Step 0 Get the llvm sycl branch:
 `mkdir $DPCPP_HOME`   
 `cd $DPCPP_HOME`   
 `git clone https://github.com/intel/llvm -b sycl`   
-`git checkout e8f2166fdd09ce3f6a15bcb7b5783cbbd149c0f7`    
+`git checkout e8f2166fdd09ce3f6a15bcb7b5783cbbd149c0f7`  `# using the August version`  
 `python $DPCPP_HOME/llvm/buildbot/configure.py --cuda`   
 `python $DPCPP_HOME/llvm/buildbot/compile.py`     
 `cd llvm/build`     
