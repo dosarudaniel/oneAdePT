@@ -114,9 +114,9 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 
     // *ERROR*
     double geometryStepLength = 1.0;
-        // fieldPropagatorBz.ComputeStepAndPropagatedState<false>(
-        // currentTrack.energy, Mass, Charge, geometricalStepLengthFromPhysics, currentTrack.pos, currentTrack.dir,
-        // currentTrack.currentState, currentTrack.nextState);
+        fieldPropagatorBz.ComputeStepAndPropagatedState<false>(
+        currentTrack.energy, Mass, Charge, geometricalStepLengthFromPhysics, currentTrack.pos, currentTrack.dir,
+        currentTrack.currentState, currentTrack.nextState);
 				
     if (currentTrack.nextState.IsOnBoundary()) {
       theTrack->SetGStepLength(geometryStepLength);
@@ -156,7 +156,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 
         cosPhi = cos(phi);
         sinPhi = sin(phi);
-        //sinPhi = sycl::sincos(phi, sycl::make_ptr<double, sycl::access::address_space::global_space>(&cosPhi));
+        sinPhi = sycl::sincos(phi, sycl::make_ptr<double, sycl::access::address_space::global_space>(&cosPhi));
 
         gamma1.InitAsSecondary(currentTrack);
         gamma1.energy = copcore::units::kElectronMassC2;
@@ -177,8 +177,10 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 
       activeQueue->push_back(slot);
       // relocateQueue->push_back(slot);
-
-      //LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
+      
+      #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
+        LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
+      #endif
 
       // Move to the next boundary.
       currentTrack.SwapStates();
@@ -221,7 +223,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
       double dirSecondary[3];
 
       // ERROR
-      //SampleDirectionsIoni(energy, deltaEkin, dirSecondary, dirPrimary, &rnge);
+      SampleDirectionsIoni(energy, deltaEkin, dirSecondary, dirPrimary, &rnge);
       
 
       Track &secondary = secondaries.electrons.NextTrack();
