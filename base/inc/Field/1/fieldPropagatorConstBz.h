@@ -135,7 +135,6 @@ double fieldPropagatorConstBz::ComputeStepAndPropagatedState(
       vecgeom::Vector3D<double> endDirection = direction;
       double safeMove                        = std::min(remains, safeLength);
 
-      // fieldPropagatorConstBz( aTrack, BzValue, endPosition, endDirection ); -- Doesn't work
       helixBz.DoStep(position, direction, charge, momentumMag, safeMove, endPosition, endDirection);
 
       vecgeom::Vector3D<double> chordVec = endPosition - position;
