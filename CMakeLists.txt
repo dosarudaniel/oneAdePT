@@ -21,17 +21,20 @@ set(CMAKE_CUDA_EXTENSIONS OFF)
 set(CMAKE_CUDA_ARCHITECTURES 61 CACHE STRING "CUDA architectures")
 
 
-set(SYCL_INCLUDE_DIR "${SYCL_ROOT}/include/")
+set(SYCL_INCLUDE_DIR "${SYCL_ROOT}/include/sycl")
 set(SYCL_LIB "${SYCL_ROOT}/lib/libsycl.so")
 set(SYCL_FLAGS
-  	"-fsycl"
-  	"-fsycl-targets=nvptx64-nvidia-cuda-sycldevice"
-  	"-fsycl-unnamed-lambda"
-  	"-std=c++20"
-  	"-stdlib=libstdc++"
-        "-Wno-unknown-cuda-version")
+        "-fsycl"
+        "-fsycl-unnamed-lambda"
+        "-fsycl-targets=nvptx64-nvidia-cuda-sycldevice"
+        "-Xsycl-target-backend=nvptx64-nvidia-cuda-sycldevice"
+        "--cuda-gpu-arch=sm_61"
+        "-std=c++20"
+        "-stdlib=libstdc++"
+        "-Wno-unknown-cuda-version"
+        )
       
-set(EXTRA_FLAGS "-DNDEBUG" "-DROOT_NO_INT128" "-I${CMAKE_SOURCE_DIR}/../local/include" )
+set(EXTRA_FLAGS "-D_ONEADEPT_" "-DNDEBUG" "-DROOT_NO_INT128" "-DG4HepEm_CUDA_BUILD" "-I${CMAKE_SOURCE_DIR}/../local/include" )
 
 #include_directories("-I${CMAKE_SOURCE_DIR}/base/inc")
 

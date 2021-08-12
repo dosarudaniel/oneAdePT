@@ -1,6 +1,7 @@
 
-#include "G4HepEmRunUtils.hh"
+#include <CL/sycl.hpp>
 
+#include "G4HepEmRunUtils.hh"
 #include "G4HepEmMath.hh"
 
 #include <cmath>
@@ -16,7 +17,7 @@
 void RotateToReferenceFrame(double &u, double &v, double &w, const double* refDir) {
   double up = refDir[0]*refDir[0] + refDir[1]*refDir[1];
   if (up>0.) {
-    up = std::sqrt(up);
+    up = sqrt(up);
     const double px = u;
     const double py = v;
     const double pz = w;
@@ -32,7 +33,7 @@ void RotateToReferenceFrame(double &u, double &v, double &w, const double* refDi
 void RotateToReferenceFrame(double* dir, const double* refDir) {
   double up = refDir[0]*refDir[0] + refDir[1]*refDir[1];
   if (up>0.) {
-    up = std::sqrt(up);
+    up = sqrt(up);
     const double px = dir[0];
     const double py = dir[1];
     const double pz = dir[2];
@@ -182,7 +183,7 @@ int    FindLowerBinIndex(double* xdata, int num, double x, int step) {
   // Perform a binary search to find the interval val is in
   int ml = -1;
   int mu = num-1;
-  while (std::abs(mu-ml)>1) {
+  while (sycl::abs(mu-ml)>1) {
     int mav = 0.5*(ml+mu);
     if (x<xdata[step*mav]) {  mu = mav; }
     else                   {  ml = mav; }

@@ -47,10 +47,10 @@ bool TestGammaElemSelectorData ( const struct G4HepEmData* hepEmData ) {
     tsInImat[i]       = imat;
     double minEKin    = theGammaData->fConvEnergyGrid[0];
     double maxEKin    = theGammaData->fConvEnergyGrid[theGammaData->fConvEnergyGridSize-1];
-    double lMinEkin   = std::log(minEKin);
-    double lEkinDelta = std::log(maxEKin/minEKin);
+    double lMinEkin   = log(minEKin);
+    double lEkinDelta = log(maxEKin/minEKin);
     tsInLogEkin[i]    = dis(gen)*lEkinDelta+lMinEkin;
-    tsInEkin[i]       = std::exp(tsInLogEkin[i]);
+    tsInEkin[i]       = exp(tsInLogEkin[i]);
     tsInRngVals[i]    = dis(gen);
     // get number of elements this material (from the currecnt material-cuts)
     // is composed of

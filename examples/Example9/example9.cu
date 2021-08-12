@@ -240,8 +240,9 @@ void example9(const vecgeom::cxx::VPlacedVolume *world, int numParticles, double
 
   constexpr int MaxBlocks        = 1024;
   constexpr int TransportThreads = 32;
-  constexpr int RelocateThreads  = 32;
-  int transportBlocks, relocateBlocks;
+  //constexpr int RelocateThreads  = 32;
+  //int transportBlocks, relocateBlocks;
+  int transportBlocks;
 
   vecgeom::Stopwatch timer;
   timer.Start();
@@ -262,15 +263,15 @@ void example9(const vecgeom::cxx::VPlacedVolume *world, int numParticles, double
       transportBlocks = (numElectrons + TransportThreads - 1) / TransportThreads;
       transportBlocks = std::min(transportBlocks, MaxBlocks);
 
-      relocateBlocks = std::min(numElectrons, MaxBlocks);
+      //relocateBlocks = std::min(numElectrons, MaxBlocks);
 
       TransportElectrons</*IsElectron*/ true><<<transportBlocks, TransportThreads, 0, electrons.stream>>>(
           electrons.tracks, electrons.queues.currentlyActive, secondaries, electrons.queues.nextActive,
           electrons.queues.relocate, scoring);
-
+      /*
       RelocateToNextVolume<<<relocateBlocks, RelocateThreads, 0, electrons.stream>>>(electrons.tracks,
                                                                                      electrons.queues.relocate);
-
+      */
       COPCORE_CUDA_CHECK(cudaEventRecord(electrons.event, electrons.stream));
       COPCORE_CUDA_CHECK(cudaStreamWaitEvent(stream, electrons.event, 0));
     }
@@ -281,15 +282,15 @@ void example9(const vecgeom::cxx::VPlacedVolume *world, int numParticles, double
       transportBlocks = (numPositrons + TransportThreads - 1) / TransportThreads;
       transportBlocks = std::min(transportBlocks, MaxBlocks);
 
-      relocateBlocks = std::min(numPositrons, MaxBlocks);
+      //relocateBlocks = std::min(numPositrons, MaxBlocks);
 
       TransportElectrons</*IsElectron*/ false><<<transportBlocks, TransportThreads, 0, positrons.stream>>>(
           positrons.tracks, positrons.queues.currentlyActive, secondaries, positrons.queues.nextActive,
           positrons.queues.relocate, scoring);
-
+      /*
       RelocateToNextVolume<<<relocateBlocks, RelocateThreads, 0, positrons.stream>>>(positrons.tracks,
                                                                                      positrons.queues.relocate);
-
+      */
       COPCORE_CUDA_CHECK(cudaEventRecord(positrons.event, positrons.stream));
       COPCORE_CUDA_CHECK(cudaStreamWaitEvent(stream, positrons.event, 0));
     }
@@ -300,15 +301,15 @@ void example9(const vecgeom::cxx::VPlacedVolume *world, int numParticles, double
       transportBlocks = (numGammas + TransportThreads - 1) / TransportThreads;
       transportBlocks = std::min(transportBlocks, MaxBlocks);
 
-      relocateBlocks = std::min(numGammas, MaxBlocks);
+      //relocateBlocks = std::min(numGammas, MaxBlocks);
 
       TransportGammas<<<transportBlocks, TransportThreads, 0, gammas.stream>>>(
           gammas.tracks, gammas.queues.currentlyActive, secondaries, gammas.queues.nextActive,
           gammas.queues.relocate, scoring);
-
+      /*
       RelocateToNextVolume<<<relocateBlocks, RelocateThreads, 0, gammas.stream>>>(gammas.tracks,
                                                                                   gammas.queues.relocate);
-
+      */
       COPCORE_CUDA_CHECK(cudaEventRecord(gammas.event, gammas.stream));
       COPCORE_CUDA_CHECK(cudaStreamWaitEvent(stream, gammas.event, 0));
     }

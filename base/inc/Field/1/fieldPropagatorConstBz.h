@@ -11,20 +11,42 @@
 #include <AdePT/1/BlockData.h>
 #include <AdePT/1/LoopNavigator.h>
 
-#include <Field/ConstBzFieldStepper.h>
+#include <Field/1/ConstBzFieldStepper.h>
+
+#if (defined( __SYCL_DEVICE_ONLY__))
+#define log sycl::log
+#define exp sycl::exp
+#define cos sycl::cos
+#define sin sycl::sin
+#define pow sycl::pow
+#define frexp sycl::frexp
+#define ldexp sycl::ldexp
+#define modf sycl::modf
+#define fabs sycl::fabs
+#else
+#define log std::log
+#define exp std::exp
+#define cos std::cos
+#define sin std::sin
+#define pow std::pow
+#define frexp std::frexp
+#define ldexp std::ldexp
+#define modf std::modf
+#define fabs std::fabs
+#endif
 
 // Data structures for statistics of propagation chords
 
 class fieldPropagatorConstBz {
 public:
-  __host__ __device__ fieldPropagatorConstBz(float Bz) { BzValue = Bz; }
-  __host__ __device__ ~fieldPropagatorConstBz() {}
+  fieldPropagatorConstBz(float Bz) { BzValue = Bz; }
+  ~fieldPropagatorConstBz() {}
 
-  __host__ __device__ void stepInField(double kinE, double mass, int charge, double step,
+  void stepInField(double kinE, double mass, int charge, double step,
                                        vecgeom::Vector3D<double> &position, vecgeom::Vector3D<double> &direction);
 
   template <bool Relocate = true>
-  __host__ __device__ double ComputeStepAndPropagatedState(double kinE, double mass, int charge, double physicsStep,
+  double ComputeStepAndPropagatedState(double kinE, double mass, int charge, double physicsStep,
                                                            vecgeom::Vector3D<double> &position,
                                                            vecgeom::Vector3D<double> &direction,
                                                            vecgeom::NavStateIndex const &current_state,
@@ -38,7 +60,7 @@ constexpr double kPushField = 1.e-8 * copcore::units::cm;
 
 // -----------------------------------------------------------------------------
 
-__host__ __device__ void fieldPropagatorConstBz::stepInField(double kinE, double mass, int charge, double step,
+void fieldPropagatorConstBz::stepInField(double kinE, double mass, int charge, double step,
                                                              vecgeom::Vector3D<double> &position,
                                                              vecgeom::Vector3D<double> &direction)
 {
@@ -63,7 +85,7 @@ __host__ __device__ void fieldPropagatorConstBz::stepInField(double kinE, double
 // Determine the step along curved trajectory for charged particles in a field.
 //  ( Same name as as navigator method. )
 template <bool Relocate>
-__host__ __device__ double fieldPropagatorConstBz::ComputeStepAndPropagatedState(
+double fieldPropagatorConstBz::ComputeStepAndPropagatedState(
     double kinE, double mass, int charge, double physicsStep, vecgeom::Vector3D<double> &position,
     vecgeom::Vector3D<double> &direction, vecgeom::NavStateIndex const &current_state,
     vecgeom::NavStateIndex &next_state)
@@ -72,7 +94,7 @@ __host__ __device__ double fieldPropagatorConstBz::ComputeStepAndPropagatedState
   double momentumXYMag =
       momentumMag * sqrt((1. - direction[2]) * (1. + direction[2])); // only XY component matters for the curvature
 
-  double curv = std::fabs(ConstBzFieldStepper::kB2C * charge * BzValue) / (momentumXYMag + 1.0e-30); // norm for step
+  double curv = fabs(ConstBzFieldStepper::kB2C * charge * BzValue) / (momentumXYMag + 1.0e-30); // norm for step
 
   constexpr double gEpsilonDeflect = 1.E-2 * copcore::units::cm;
 
@@ -92,11 +114,11 @@ __host__ __device__ double fieldPropagatorConstBz::ComputeStepAndPropagatedState
   const double epsilon_step = 1.0e-7 * physicsStep; // Ignore remainder if < e_s * PhysicsStep
 
   if (charge == 0) {
-    if (Relocate) {
-      stepDone = LoopNavigator::ComputeStepAndPropagatedState(position, direction, remains, current_state, next_state);
-    } else {
-      stepDone = LoopNavigator::ComputeStepAndNextVolume(position, direction, remains, current_state, next_state);
-    }
+    // if (Relocate) {
+    //   stepDone = LoopNavigator::ComputeStepAndPropagatedState(position, direction, remains, current_state, next_state);
+    // } else {
+    //   stepDone = LoopNavigator::ComputeStepAndNextVolume(position, direction, remains, current_state, next_state);
+    // }
     position += (stepDone + kPushField) * direction;
   } else {
     bool fullChord = false;
@@ -111,9 +133,8 @@ __host__ __device__ double fieldPropagatorConstBz::ComputeStepAndPropagatedState
     do {
       vecgeom::Vector3D<double> endPosition  = position;
       vecgeom::Vector3D<double> endDirection = direction;
-      double safeMove                        = min(remains, safeLength);
+      double safeMove                        = std::min(remains, safeLength);
 
-      // fieldPropagatorConstBz( aTrack, BzValue, endPosition, endDirection ); -- Doesn't work
       helixBz.DoStep(position, direction, charge, momentumMag, safeMove, endPosition, endDirection);
 
       vecgeom::Vector3D<double> chordVec = endPosition - position;
@@ -121,11 +142,11 @@ __host__ __device__ double fieldPropagatorConstBz::ComputeStepAndPropagatedState
       vecgeom::Vector3D<double> chordDir = (1.0 / chordLen) * chordVec;
 
       double move;
-      if (Relocate) {
-        move = LoopNavigator::ComputeStepAndPropagatedState(position, chordDir, chordLen, current_state, next_state);
-      } else {
-        move = LoopNavigator::ComputeStepAndNextVolume(position, chordDir, chordLen, current_state, next_state);
-      }
+      //      if (Relocate) {
+      //        move = LoopNavigator::ComputeStepAndPropagatedState(position, chordDir, chordLen, current_state, next_state);
+      //     } else {
+      //  move = LoopNavigator::ComputeStepAndNextVolume(position, chordDir, chordLen, current_state, next_state);
+      //  }
 
       fullChord = (move == chordLen);
       if (fullChord) {

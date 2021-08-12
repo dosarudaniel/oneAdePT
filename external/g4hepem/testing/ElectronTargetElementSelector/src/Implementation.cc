@@ -78,10 +78,10 @@ bool TestElemSelectorData ( const struct G4HepEmData* hepEmData, const struct G4
       if (minEKin>=maxEKin) {
         continue;
       }
-      double lMinEkin   = std::log(minEKin);
-      double lEkinDelta = std::log(maxEKin/minEKin);
+      double lMinEkin   = log(minEKin);
+      double lEkinDelta = log(maxEKin/minEKin);
       tsInLogEkin[i]    = dis(gen)*lEkinDelta+lMinEkin;
-      tsInEkin[i]       = std::exp(tsInLogEkin[i]);
+      tsInEkin[i]       = exp(tsInLogEkin[i]);
       tsInRngVals[i]    = dis(gen);
       // get number of elements this material (from the currecnt material-cuts)
       // is composed of

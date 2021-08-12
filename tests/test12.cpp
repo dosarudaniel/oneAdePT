@@ -4,7 +4,6 @@ extern SYCL_EXTERNAL double stepInField(double kinE, double mass, int charge); /
 
 void kernel(double *step)
 {
-
   #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
      *step = stepInField(2.0, 3.0, 1);
   #endif
@@ -20,6 +19,7 @@ int main(void)
         	<< "\n";
  
   double *d_dev_ptr;
+
   d_dev_ptr  = sycl::malloc_shared<double>(1, q_ct1);
 
   q_ct1.submit([&](sycl::handler &cgh) {

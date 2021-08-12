@@ -70,7 +70,7 @@ double SamplePhotonEnergyAndDirection(const double thePrimGmE, double* thePrimGm
   const double kappa = thePrimGmE / kElectronMassC2;
   const double eps0  = 1. / (1. + 2. * kappa);
   const double eps02 = eps0 * eps0;
-  const double al1   = -std::log(eps0);
+  const double al1   = -log(eps0);
   const double al2   = al1 + 0.5 * (1. - eps02);
   double eps, eps2, gf;
   double oneMinusCost, sint2;
@@ -78,7 +78,7 @@ double SamplePhotonEnergyAndDirection(const double thePrimGmE, double* thePrimGm
   do {
     rnge->flatArray(3, rndm);
     if (al1 > al2*rndm[0]) {
-      eps  = std::exp(-al1 * rndm[1]);
+      eps  = exp(-al1 * rndm[1]);
       eps2 = eps * eps;
     } else {
       eps2 = eps02 + (1. - eps02) * rndm[1];
@@ -93,8 +93,8 @@ double SamplePhotonEnergyAndDirection(const double thePrimGmE, double* thePrimGm
   const double sint = std::sqrt(G4HepEmMax(0., sint2));
   const double phi  = k2Pi * rnge->flat();
   // direction of the scattered gamma in the scattering frame
-  thePrimGmDir[0]   = sint * std::cos(phi);
-  thePrimGmDir[1]   = sint * std::sin(phi);
+  thePrimGmDir[0]   = sint * cos(phi);
+  thePrimGmDir[1]   = sint * sin(phi);
   thePrimGmDir[2]   = cost;
   // rotate to refernce frame (G4HepEmRunUtils function) to get it in lab. frame
   RotateToReferenceFrame(thePrimGmDir, theOrgPrimGmDir);

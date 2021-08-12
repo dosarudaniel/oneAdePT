@@ -1,3 +1,18 @@
+/*
+#if (defined( __SYCL_DEVICE_ONLY__))
+#define log sycl::log
+#define exp sycl::exp
+#define cos sycl::cos
+#define sin sycl::sin
+#define pow sycl::pow
+#else
+#define log std::log
+#define exp std::exp
+#define cos std::cos
+#define sin std::sin
+#define pow std::pow
+#endif
+*/
 
 #include "G4HepEmElectronInteractionBrem.hh"
 
@@ -158,7 +173,7 @@ double SampleETransferBremSB(struct G4HepEmData* hepEmData, double thePrimEkin, 
       // kappa sampled at E_i e- energy
       const double lKappa = lKL+dm2/dm3*(lKH-lKL);
       // transform lKappa to [log(gcut/ekin),0] form [log(gcut/E_i),0]
-      kappa  = std::exp(lKappa*lKTrans);
+      kappa  = exp(lKappa*lKTrans);
      } else {
       kappa = 1.0-rndm[0]*(1.0-theGamCut/thePrimEkin);
      }
@@ -170,11 +185,11 @@ double SampleETransferBremSB(struct G4HepEmData* hepEmData, double thePrimEkin, 
      // add positron correction if particle is e+
      if (!iselectron) {
        const double     e1 = thePrimEkin - theGamCut;
-       const double iBeta1 = (e1 + kElectronMassC2) / std::sqrt(e1*(e1 + 2.0*kElectronMassC2));
+       const double iBeta1 = (e1 + kElectronMassC2) / sqrt(e1*(e1 + 2.0*kElectronMassC2));
        const double     e2 = thePrimEkin - eGamma;
-       const double iBeta2 = (e2 + kElectronMassC2) / std::sqrt(e2*(e2 + 2.0*kElectronMassC2));
+       const double iBeta2 = (e2 + kElectronMassC2) / sqrt(e2*(e2 + 2.0*kElectronMassC2));
        const double    dum = kAlpha*k2Pi*dZet*(iBeta1 - iBeta2);
-       suppression = (dum > -12.) ? suppression*std::exp(dum) : 0.;
+       suppression = (dum > -12.) ? suppression*exp(dum) : 0.;
      }
    } while (rndm[1] > suppression);
    return eGamma;
@@ -203,7 +218,7 @@ double SampleETransferBremRB(struct G4HepEmData* hepEmData, double thePrimEkin, 
   const double densityFactor = kMigdalConst * theMData.fElectronDensity;
   const double     lpmEnergy = kLPMconstant * theMData.fRadiationLength;
   // threshold for LPM effect (i.e. below which LPM hidden by density effect)
-  const double  lpmEnergyLim = std::sqrt(densityFactor) * lpmEnergy;
+  const double  lpmEnergyLim = sqrt(densityFactor) * lpmEnergy;
   // compute the density, i.e. dielectric suppression correction factor
   const double thePrimTotalE = thePrimEkin + kElectronMassC2;
   const double   densityCorr = densityFactor * thePrimTotalE * thePrimTotalE;
@@ -214,14 +229,14 @@ double SampleETransferBremRB(struct G4HepEmData* hepEmData, double thePrimEkin, 
   const double      zFactor2 = (1.+1./dZet)/12.;
   const double    rejFuncMax = zFactor1 + zFactor2;
   // min and range of the transformed variable: x(k) = ln(k^2+k_p^2) that is in [ln(k_c^2+k_p^2), ln(E_k^2+k_p^2)]
-  const double xmin   = std::log( theGamCut*theGamCut     + densityCorr );
-  const double xrange = std::log( thePrimEkin*thePrimEkin + densityCorr ) - xmin;
+  const double xmin   = log( theGamCut*theGamCut     + densityCorr );
+  const double xrange = log( thePrimEkin*thePrimEkin + densityCorr ) - xmin;
   // sampling the emitted gamma energy
   double rndm[2];
   double eGamma, funcVal;
   do {
     rnge->flatArray(2, rndm);
-    eGamma = std::sqrt( G4HepEmMax( std::exp( xmin + rndm[0] * xrange ) - densityCorr, 0.0 ) );
+    eGamma = sqrt( G4HepEmMax( exp( xmin + rndm[0] * xrange ) - densityCorr, 0.0 ) );
     // evaluate the DCS at this emitted gamma energy
     const double y     = eGamma / thePrimTotalE;
     const double onemy = 1.-y;
@@ -243,10 +258,10 @@ double SampleETransferBremRB(struct G4HepEmData* hepEmData, double thePrimEkin, 
         // evaluate the screening functions (TF model of the atom, Tsai's aprx.):
 
         const double gam2 = gam*gam;
-        const double phi1 = 16.863-2.0*std::log(1.0+0.311877*gam2)+2.4*std::exp(-0.9*gam)+1.6*std::exp(-1.5*gam);
+        const double phi1 = 16.863-2.0*log(1.0+0.311877*gam2)+2.4*exp(-0.9*gam)+1.6*exp(-1.5*gam);
         const double phi2 = 2.0/(3.0+19.5*gam+18.0*gam2);    // phi1-phi2
         const double eps2 = eps*eps;
-        const double psi1 = 24.34-2.0*std::log(1.0+13.111641*eps2)+2.8*std::exp(-8.0*eps)+1.2*std::exp(-29.2*eps);
+        const double psi1 = 24.34-2.0*log(1.0+13.111641*eps2)+2.8*exp(-8.0*eps)+1.2*exp(-29.2*eps);
         const double psi2 = 2.0/(3.0+120.0*eps+1200.0*eps2); //psi1-psi2
         //
         const double logZ = theElemData.fLogZ;
@@ -296,21 +311,21 @@ int SelectTargetAtomBrem(const struct G4HepEmElectronData* elData, const int imc
 void SampleDirectionsBrem(const double thePrimEkin, const double theSecGammaEkin, double* theSecGammaDir, double* thePrimElecDir, G4HepEmRandomEngine* rnge) {
   // sample photon direction (modified Tsai sampling):
   const double cost = SampleCostModifiedTsai(thePrimEkin, rnge);
-  const double sint = std::sqrt((1.0-cost)*(1.0+cost));
+  const double sint = sqrt((1.0-cost)*(1.0+cost));
   const double  phi = k2Pi*rnge->flat();
-  theSecGammaDir[0] = sint * std::cos(phi);
-  theSecGammaDir[1] = sint * std::sin(phi);
+  theSecGammaDir[0] = sint * cos(phi);
+  theSecGammaDir[1] = sint * sin(phi);
   theSecGammaDir[2] = cost;
   // rotate to refernce frame (G4HepEmRunUtils function) to get it in lab. frame
   RotateToReferenceFrame(theSecGammaDir, thePrimElecDir);
   // go for the post-interaction primary electron/positiorn direction in lab. farme
   const double primETot = thePrimEkin + kElectronMassC2;
-  const double primPTot = std::sqrt(thePrimEkin * (primETot + kElectronMassC2));
+  const double primPTot = sqrt(thePrimEkin * (primETot + kElectronMassC2));
   thePrimElecDir[0] = primPTot * thePrimElecDir[0] - theSecGammaEkin * theSecGammaDir[0];
   thePrimElecDir[1] = primPTot * thePrimElecDir[1] - theSecGammaEkin * theSecGammaDir[1];
   thePrimElecDir[2] = primPTot * thePrimElecDir[2] - theSecGammaEkin * theSecGammaDir[2];
   // normalisation
-  const double  norm = 1.0 / std::sqrt(thePrimElecDir[0] * thePrimElecDir[0] + thePrimElecDir[1] * thePrimElecDir[1] + thePrimElecDir[2] * thePrimElecDir[2]);
+  const double  norm = 1.0 / sqrt(thePrimElecDir[0] * thePrimElecDir[0] + thePrimElecDir[1] * thePrimElecDir[1] + thePrimElecDir[2] * thePrimElecDir[2]);
   thePrimElecDir[0] *= norm;
   thePrimElecDir[1] *= norm;
   thePrimElecDir[2] *= norm;

@@ -82,7 +82,7 @@ void InitMaterialAndCoupleData(struct G4HepEmData* hepEmData, struct G4HepEmPara
     mccData.fG4MatCutIndex  = mcIndx;
     mccData.fSecElProdCutE  = std::max(electronCutE, hepEmPars->fElectronTrackingCut);
     mccData.fSecGamProdCutE = gammaCutE;
-    mccData.fLogSecGamCutE  = std::log(gammaCutE);
+    mccData.fLogSecGamCutE  = log(gammaCutE);
     ++numUsedG4MatCuts;
 
     // check if the corresponding G4HepEm material struct has already been created
@@ -121,17 +121,17 @@ void InitMaterialAndCoupleData(struct G4HepEmData* hepEmData, struct G4HepEmPara
           elData.fZet13        = std::pow(dZet, 1.0/3.0);
           elData.fZet23        = std::pow(dZet, 2.0/3.0);
           elData.fCoulomb      = ((*elmVec)[ie])->GetfCoulomb();
-          elData.fLogZ         = std::log(dZet);
-          double Fel           = (izet<5) ? kFelLowZet[izet]   : std::log(184.15) -     elData.fLogZ/3.0;
-          double Finel         = (izet<5) ? kFinelLowZet[izet] : std::log(1194.0) - 2.0*elData.fLogZ/3.0;
+          elData.fLogZ         = log(dZet);
+          double Fel           = (izet<5) ? kFelLowZet[izet]   : log(184.15) -     elData.fLogZ/3.0;
+          double Finel         = (izet<5) ? kFinelLowZet[izet] : log(1194.0) - 2.0*elData.fLogZ/3.0;
           elData.fZFactor1     = (Fel-elData.fCoulomb) + Finel/dZet;
           const double FZLow   = 8.0*elData.fLogZ/3.0;
           const double FZHigh  = 8.0*(elData.fLogZ/3.0 + elData.fCoulomb);
-          elData.fDeltaMaxLow  = std::exp((42.038 - FZLow)/8.29) - 0.958;
-          elData.fDeltaMaxHigh = std::exp((42.038 - FZHigh)/8.29) - 0.958;
+          elData.fDeltaMaxLow  = exp((42.038 - FZLow)/8.29) - 0.958;
+          elData.fDeltaMaxHigh = exp((42.038 - FZHigh)/8.29) - 0.958;
           double varS1         = elData.fZet23/(184.15*184.15);
-          elData.fILVarS1Cond  = 1./(std::log(std::sqrt(2.0)*varS1));
-          elData.fILVarS1      = 1./std::log(varS1);
+          elData.fILVarS1Cond  = 1./(log(std::sqrt(2.0)*varS1));
+          elData.fILVarS1      = 1./log(varS1);
         }
       }
       //

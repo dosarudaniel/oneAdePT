@@ -11,8 +11,18 @@ endif()
 # reused. The example includes geometry, magnetic field with constant Bz, and
 # physics processes for e-/e+ as well as gammas. Results are reproducible using
 # one RANLUX++ state per track.
-add_executable(example9 example9.cpp example9.cu electrons.cu gammas.cu relocation.cu)
-target_link_libraries(example9 PRIVATE AdePT VecGeom::vecgeom VecGeom::vecgeomcuda_static VecGeom::vgdml ${Geant4_LIBRARIES} G4HepEm::g4HepEmData G4HepEm::g4HepEmInit G4HepEm::g4HepEmRun)
-target_compile_options(example9 PRIVATE "$<$<AND:$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>,$<COMPILE_LANGUAGE:CUDA>>:-G;-src-in-ptx>")
+set(CMAKE_C_COMPILER "${SYCL_ROOT}/bin/clang")
+set(CMAKE_CXX_COMPILER "${SYCL_ROOT}/bin/clang++")
+set(CMAKE_CXX_STANDARD 20)
 
-set_target_properties(example9 PROPERTIES CUDA_SEPARABLE_COMPILATION ON CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+add_executable(example9.1 example9.cpp example9.dp.cpp electrons.dp.cpp gammas.dp.cpp) #  relocation.cu)
+target_include_directories(example9.1 PUBLIC
+      $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/base/inc/G4HepEm>
+      $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/base/inc>
+      $<INSTALL_INTERFACE:base>)
+target_link_libraries(example9.1 PRIVATE VecGeom::vecgeom VecGeom::vecgeomcuda_static VecGeom::vgdml ${Geant4_LIBRARIES} G4HepEm::g4HepEmData G4HepEm::g4HepEmInit G4HepEm::g4HepEmRun ${SYCL_FLAGS} ${EXTRA_FLAGS})
+target_compile_options(example9.1  PUBLIC ${SYCL_FLAGS} ${EXTRA_FLAGS})
+
+# force the compiler to use the OpenCL from sycl, not the one from CUDA (older version)
+target_include_directories(example9.1 SYSTEM BEFORE PUBLIC ${SYCL_INCLUDE_DIR})
+

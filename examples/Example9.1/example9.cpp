@@ -1,10 +1,13 @@
 // SPDX-FileCopyrightText: 2021 CERN
 // SPDX-License-Identifier: Apache-2.0
 
+
+#include <CL/sycl.hpp>
+#include <dpct/dpct.hpp>
 #include "example9.h"
 
-#include <AdePT/ArgParser.h>
-#include <CopCore/SystemOfUnits.h>
+#include <AdePT/1/ArgParser.h>
+#include <CopCore/1/SystemOfUnits.h>
 
 #include <G4NistManager.hh>
 #include <G4Material.hh>
@@ -30,6 +33,11 @@
 #ifdef VECGEOM_GDML
 #include <VecGeom/gdml/Frontend.h>
 #endif
+
+dpct::constant_memory<struct G4HepEmParameters, 0> g4HepEmPars;
+dpct::constant_memory<struct G4HepEmData, 0> g4HepEmData;
+dpct::global_memory<struct G4HepEmElectronManager, 0> electronManager;
+dpct::global_memory<struct G4HepEmGammaManager, 0> gammaManager;
 
 static void InitGeant4()
 {
@@ -84,6 +92,11 @@ int main(int argc, char *argv[])
   return 2;
 #endif
 
+  struct G4HepEmElectronManager *electronManager_p;
+  struct G4HepEmGammaManager *gammaManager_p;
+  struct G4HepEmParameters *g4HepEmPars_p;
+  struct G4HepEmData *g4HepEmData_p;
+
   OPTION_STRING(gdml_name, "trackML.gdml");
   OPTION_INT(cache_depth, 0); // 0 = full depth
   OPTION_INT(particles, 1);
@@ -92,15 +105,16 @@ int main(int argc, char *argv[])
 
   InitGeant4();
 
-#ifdef VECGEOM_GDML
-  vecgeom::GeoManager::Instance().SetTransformationCacheDepth(cache_depth);
-  // The vecgeom millimeter unit is the last parameter of vgdml::Frontend::Load
-  bool load = vgdml::Frontend::Load(gdml_name.c_str(), false, copcore::units::mm);
-  if (!load) return 3;
-#endif
+// #ifdef VECGEOM_GDML
+//   vecgeom::GeoManager::Instance().SetTransformationCacheDepth(cache_depth);
+//   // The vecgeom millimeter unit is the last parameter of vgdml::Frontend::Load
+//   bool load = vgdml::Frontend::Load(gdml_name.c_str(), false, copcore::units::mm);
+//   if (!load) return 3;
+// #endif
 
   const vecgeom::VPlacedVolume *world = vecgeom::GeoManager::Instance().GetWorld();
+
   if (!world) return 4;
 
-  example9(world, particles, energy);
+  example9(world, particles, energy, electronManager_p, gammaManager_p, g4HepEmPars_p, g4HepEmData_p);
 }

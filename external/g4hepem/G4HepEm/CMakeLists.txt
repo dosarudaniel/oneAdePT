@@ -1,7 +1,13 @@
 # - Build component libraries
 add_subdirectory(G4HepEmData)
+add_subdirectory(G4HepEmDataJsonIO)
 add_subdirectory(G4HepEmInit)
 add_subdirectory(G4HepEmRun)
+
+if (NOT SYCL_ROOT)
+   set(SYCL_ROOT $ENV{SYCL_ROOT})
+endif()
+
 
 # - Now top level G4HepEm library
 file(GLOB G4HEPEM_headers ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hh)
@@ -16,6 +22,9 @@ endif()
 add_library(${PROJECT_NAME}::g4HepEm ALIAS g4HepEm)
 
 target_compile_features(g4HepEm PUBLIC cxx_std_${CMAKE_CXX_STANDARD})
+
+# set(A "${CMAKE_CURRENT_SOURCE_DIR}/include")
+# set(B "${SYCL_ROOT}/include/sycl")
 
 target_include_directories(g4HepEm PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

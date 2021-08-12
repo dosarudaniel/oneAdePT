@@ -15,8 +15,10 @@ macro(build_tests TESTS)
       )
     #target_compile_features(${TARGET_NAME}  PUBLIC cxx_std_17)
     target_compile_options(${TARGET_NAME}  PUBLIC ${SYCL_FLAGS} ${EXTRA_FLAGS})
-    target_link_libraries(${TARGET_NAME}  PUBLIC ${SYCL_FLAGS} ${EXTRA_FLAGS})
-    target_include_directories(${TARGET_NAME}  PUBLIC ${SYCL_INCLUDE_DIR})
+    target_link_libraries(${TARGET_NAME}  PUBLIC VecGeom::vecgeom VecGeom::vecgeomcuda_static VecGeom::vgdml ${SYCL_FLAGS} ${EXTRA_FLAGS})
+
+    # force the compiler to use the OpenCL from sycl, not the one from CUDA (older version)
+    target_include_directories(${TARGET_NAME} SYSTEM BEFORE  PUBLIC ${SYCL_INCLUDE_DIR})
   endforeach()
 endmacro()
 
@@ -37,6 +39,9 @@ set(ONEAPI_UNIT_TESTS_BASE
   test7.cpp                    # converted (and modified) test_atomic.cu 
   test8.cpp                    # converted (and modified) test_atomic.cu using oneAtomic.h
   test9.cpp                    # converted and modified  test_track_block.cu
+  test10.cpp                   # simplified version of example9 which calls fieldPropagatorBz.ComputeStepAndPropagatedState in kernel 
+  test11.cpp                   # 
+  test12.cpp		       # call stepInField in kernel
   )
 
 build_tests("${ONEAPI_UNIT_TESTS_BASE}")

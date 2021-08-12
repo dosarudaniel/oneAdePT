@@ -6,61 +6,28 @@
 void AllocateElectronData (struct G4HepEmElectronData** theElectronData) {
   // clean away previous (if any)
   FreeElectronData(theElectronData);
-  *theElectronData   = new G4HepEmElectronData;
-  // eloss
-  (*theElectronData)->fELossEnergyGrid                       = nullptr;
-  (*theElectronData)->fELossData                             = nullptr;
-  // mac-xsec
-  (*theElectronData)->fResMacXSecStartIndexPerMatCut         = nullptr;
-  (*theElectronData)->fResMacXSecData                        = nullptr;
-  // elemen selectors per models:
-  // - Moller-Bhabha ionisation
-  (*theElectronData)->fElemSelectorIoniStartIndexPerMatCut   = nullptr;
-  (*theElectronData)->fElemSelectorIoniData                  = nullptr;
-  // - Seltzer-Berger model for e-/e+ bremsstrahlung
-  (*theElectronData)->fElemSelectorBremSBStartIndexPerMatCut = nullptr;
-  (*theElectronData)->fElemSelectorBremSBData                = nullptr;
-  // - relativistic (improved Bethe-Heitler) model for e-/e+ bremsstrahlung
-  (*theElectronData)->fElemSelectorBremRBStartIndexPerMatCut = nullptr;
-  (*theElectronData)->fElemSelectorBremRBData                = nullptr;
+  *theElectronData = MakeElectronData();
+}
+
+G4HepEmElectronData* MakeElectronData() {
+  // Default construction handles everything we need, but add
+  // additional initialization here if required
+  return new G4HepEmElectronData;
 }
 
 
 void FreeElectronData (struct G4HepEmElectronData** theElectronData)  {
-  if (*theElectronData) {
-    // eloss
-    if ((*theElectronData)->fELossEnergyGrid) {
-      delete[] (*theElectronData)->fELossEnergyGrid;
-    }
-    if ((*theElectronData)->fELossData) {
-      delete[] (*theElectronData)->fELossData;
-    }
-    // mac-xsec
-    if ((*theElectronData)->fResMacXSecData) {
-      delete[] (*theElectronData)->fResMacXSecData;
-    }
-    if ((*theElectronData)->fResMacXSecStartIndexPerMatCut) {
-      delete[] (*theElectronData)->fResMacXSecStartIndexPerMatCut;
-    }
-    // element selectors:
-    if ((*theElectronData)->fElemSelectorIoniStartIndexPerMatCut) {
-      delete[] (*theElectronData)->fElemSelectorIoniStartIndexPerMatCut;
-    }
-    if ((*theElectronData)->fElemSelectorIoniData) {
-      delete[] (*theElectronData)->fElemSelectorIoniData;
-    }
-    if ((*theElectronData)->fElemSelectorBremSBStartIndexPerMatCut) {
-      delete[] (*theElectronData)->fElemSelectorBremSBStartIndexPerMatCut;
-    }
-    if ((*theElectronData)->fElemSelectorBremSBData) {
-      delete[] (*theElectronData)->fElemSelectorBremSBData;
-    }
-    if ((*theElectronData)->fElemSelectorBremRBStartIndexPerMatCut) {
-      delete[] (*theElectronData)->fElemSelectorBremRBStartIndexPerMatCut;
-    }
-    if ((*theElectronData)->fElemSelectorBremRBData) {
-      delete[] (*theElectronData)->fElemSelectorBremRBData;
-    }
+  if (*theElectronData != nullptr) {
+    delete[] (*theElectronData)->fELossEnergyGrid;
+    delete[] (*theElectronData)->fELossData;
+    delete[] (*theElectronData)->fResMacXSecData;
+    delete[] (*theElectronData)->fResMacXSecStartIndexPerMatCut;
+    delete[] (*theElectronData)->fElemSelectorIoniStartIndexPerMatCut;
+    delete[] (*theElectronData)->fElemSelectorIoniData;
+    delete[] (*theElectronData)->fElemSelectorBremSBStartIndexPerMatCut;
+    delete[] (*theElectronData)->fElemSelectorBremSBData;
+    delete[] (*theElectronData)->fElemSelectorBremRBStartIndexPerMatCut;
+    delete[] (*theElectronData)->fElemSelectorBremRBData;
 
     delete *theElectronData;
     *theElectronData = nullptr;
@@ -114,24 +81,30 @@ void CopyElectronDataToDevice(struct G4HepEmElectronData* onHOST, struct G4HepEm
   // allocate memory for Ionisation related data on the _d and copy form _h
   const int numIoniData = onHOST->fElemSelectorIoniNumData;
   elDataHTo_d->fElemSelectorIoniNumData = numIoniData;
-  gpuErrchk ( cudaMalloc ( &(elDataHTo_d->fElemSelectorIoniStartIndexPerMatCut), sizeof( int )    * numHepEmMatCuts ) );
-  gpuErrchk ( cudaMalloc ( &(elDataHTo_d->fElemSelectorIoniData),                sizeof( double ) * numIoniData     ) );
-  gpuErrchk ( cudaMemcpy (   elDataHTo_d->fElemSelectorIoniStartIndexPerMatCut,  onHOST->fElemSelectorIoniStartIndexPerMatCut, sizeof( int )    * numHepEmMatCuts, cudaMemcpyHostToDevice ) );
-  gpuErrchk ( cudaMemcpy (   elDataHTo_d->fElemSelectorIoniData,                 onHOST->fElemSelectorIoniData,                sizeof( double ) * numIoniData,     cudaMemcpyHostToDevice ) );
+  if (numIoniData > 0) {
+    gpuErrchk ( cudaMalloc ( &(elDataHTo_d->fElemSelectorIoniStartIndexPerMatCut), sizeof( int )    * numHepEmMatCuts ) );
+    gpuErrchk ( cudaMalloc ( &(elDataHTo_d->fElemSelectorIoniData),                sizeof( double ) * numIoniData     ) );
+    gpuErrchk ( cudaMemcpy (   elDataHTo_d->fElemSelectorIoniStartIndexPerMatCut,  onHOST->fElemSelectorIoniStartIndexPerMatCut, sizeof( int )    * numHepEmMatCuts, cudaMemcpyHostToDevice ) );
+    gpuErrchk ( cudaMemcpy (   elDataHTo_d->fElemSelectorIoniData,                 onHOST->fElemSelectorIoniData,                sizeof( double ) * numIoniData,     cudaMemcpyHostToDevice ) );
+  }
   // the same for SB brem
   const int numBremSBData = onHOST->fElemSelectorBremSBNumData;
   elDataHTo_d->fElemSelectorBremSBNumData = numBremSBData;
-  gpuErrchk ( cudaMalloc ( &(elDataHTo_d->fElemSelectorBremSBStartIndexPerMatCut), sizeof( int )    * numHepEmMatCuts ) );
-  gpuErrchk ( cudaMalloc ( &(elDataHTo_d->fElemSelectorBremSBData),                sizeof( double ) * numBremSBData   ) );
-  gpuErrchk ( cudaMemcpy (   elDataHTo_d->fElemSelectorBremSBStartIndexPerMatCut,  onHOST->fElemSelectorBremSBStartIndexPerMatCut, sizeof( int )    * numHepEmMatCuts, cudaMemcpyHostToDevice ) );
-  gpuErrchk ( cudaMemcpy (   elDataHTo_d->fElemSelectorBremSBData,                 onHOST->fElemSelectorBremSBData,                sizeof( double ) * numBremSBData,   cudaMemcpyHostToDevice ) );
+  if (numBremSBData > 0) {
+    gpuErrchk ( cudaMalloc ( &(elDataHTo_d->fElemSelectorBremSBStartIndexPerMatCut), sizeof( int )    * numHepEmMatCuts ) );
+    gpuErrchk ( cudaMalloc ( &(elDataHTo_d->fElemSelectorBremSBData),                sizeof( double ) * numBremSBData   ) );
+    gpuErrchk ( cudaMemcpy (   elDataHTo_d->fElemSelectorBremSBStartIndexPerMatCut,  onHOST->fElemSelectorBremSBStartIndexPerMatCut, sizeof( int )    * numHepEmMatCuts, cudaMemcpyHostToDevice ) );
+    gpuErrchk ( cudaMemcpy (   elDataHTo_d->fElemSelectorBremSBData,                 onHOST->fElemSelectorBremSBData,                sizeof( double ) * numBremSBData,   cudaMemcpyHostToDevice ) );
+  }
   // the same for RB brem
   const int numBremRBData = onHOST->fElemSelectorBremRBNumData;
   elDataHTo_d->fElemSelectorBremRBNumData = numBremRBData;
-  gpuErrchk ( cudaMalloc ( &(elDataHTo_d->fElemSelectorBremRBStartIndexPerMatCut), sizeof( int )    * numHepEmMatCuts ) );
-  gpuErrchk ( cudaMalloc ( &(elDataHTo_d->fElemSelectorBremRBData),                sizeof( double ) * numBremRBData   ) );
-  gpuErrchk ( cudaMemcpy (   elDataHTo_d->fElemSelectorBremRBStartIndexPerMatCut,  onHOST->fElemSelectorBremRBStartIndexPerMatCut, sizeof( int )    * numHepEmMatCuts, cudaMemcpyHostToDevice ) );
-  gpuErrchk ( cudaMemcpy (   elDataHTo_d->fElemSelectorBremRBData,                 onHOST->fElemSelectorBremRBData,                sizeof( double ) * numBremRBData,   cudaMemcpyHostToDevice ) );
+  if (numBremRBData > 0) {
+    gpuErrchk ( cudaMalloc ( &(elDataHTo_d->fElemSelectorBremRBStartIndexPerMatCut), sizeof( int )    * numHepEmMatCuts ) );
+    gpuErrchk ( cudaMalloc ( &(elDataHTo_d->fElemSelectorBremRBData),                sizeof( double ) * numBremRBData   ) );
+    gpuErrchk ( cudaMemcpy (   elDataHTo_d->fElemSelectorBremRBStartIndexPerMatCut,  onHOST->fElemSelectorBremRBStartIndexPerMatCut, sizeof( int )    * numHepEmMatCuts, cudaMemcpyHostToDevice ) );
+    gpuErrchk ( cudaMemcpy (   elDataHTo_d->fElemSelectorBremRBData,                 onHOST->fElemSelectorBremRBData,                sizeof( double ) * numBremRBData,   cudaMemcpyHostToDevice ) );
+  }
   //
   // Finaly copy the top level, i.e. the main struct with the already
   // appropriate pointers to device side memory locations but stored on the host

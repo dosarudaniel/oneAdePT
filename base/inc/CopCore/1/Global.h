@@ -9,14 +9,13 @@
 #ifndef COPCORE_1GLOBAL_H_
 #define COPCORE_1GLOBAL_H_
 
-#define DPCT_USM_LEVEL_NONE
 #include <CL/sycl.hpp>
-#include <dpct/dpct.hpp>
+//#include <dpct/dpct.hpp>
 #include <cstdio>
 #include <type_traits>
 #include <CopCore/1/Macros.h>
 
-#define COPCORE_IMPL clang++
+#define COPCORE_IMPL cpp
 
 namespace copcore {
 
@@ -30,7 +29,7 @@ inline void error_check(int, const char *, int) {}
 #define COPCORE_CUDA_CHECK(err)
 
 /** @brief Trigger a runtime error depending on the backend */
-#define COPCORE_EXCEPTION(message) throw std::runtime_error(message)
+#define COPCORE_EXCEPTION(message) assert(message) //throw std::runtime_error(message)
 
 /** @brief Check if pointer id device-resident */
 inline bool is_device_pointer(void *ptr) { return false; }

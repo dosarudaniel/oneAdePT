@@ -4,44 +4,23 @@
 void AllocateGammaData (struct G4HepEmGammaData** theGammaData) {
   // clean away previous (if any)
   FreeGammaData(theGammaData);
-  *theGammaData   = new G4HepEmGammaData;
-  // energy grids for conversion and compton
-  (*theGammaData)->fConvEnergyGrid                      = nullptr;
-  (*theGammaData)->fCompEnergyGrid                      = nullptr;
-  // macroscopic cross sections, for conversina and compton, per materials
-  (*theGammaData)->fConvCompMacXsecData                 = nullptr;  // mac-xsec
-  // element selector for conversion (no need for the dummy KN compton)
-  (*theGammaData)->fElemSelectorConvStartIndexPerMat    = nullptr;
-  (*theGammaData)->fElemSelectorConvEgrid               = nullptr;
-  (*theGammaData)->fElemSelectorConvData                = nullptr;
-
+  *theGammaData   = MakeGammaData();
 }
 
+G4HepEmGammaData* MakeGammaData() {
+  // Default construction handles everything we need, but add
+  // additional initialization here if required
+  return new G4HepEmGammaData;
+}
 
 void FreeGammaData (struct G4HepEmGammaData** theGammaData)  {
-  if (*theGammaData) {
-    // energy grids for conversion and compton
-    if ((*theGammaData)->fConvEnergyGrid ) {
-      delete[] (*theGammaData)->fConvEnergyGrid ;
-    }
-    if ((*theGammaData)->fCompEnergyGrid) {
-      delete[] (*theGammaData)->fCompEnergyGrid;
-    }
-    // mac-xsec for conversion and compton
-    if ((*theGammaData)->fConvCompMacXsecData) {
-      delete[] (*theGammaData)->fConvCompMacXsecData;
-    }
-    // element selector for conversion
-    if ((*theGammaData)->fElemSelectorConvStartIndexPerMat) {
-      delete[] (*theGammaData)->fElemSelectorConvStartIndexPerMat;
-    }
-    if ((*theGammaData)->fElemSelectorConvEgrid) {
-      delete[] (*theGammaData)->fElemSelectorConvEgrid;
-    }
-    if ((*theGammaData)->fElemSelectorConvData) {
-      delete[] (*theGammaData)->fElemSelectorConvData;
-    }
-
+  if (*theGammaData != nullptr) {
+    delete[] (*theGammaData)->fConvEnergyGrid ;
+    delete[] (*theGammaData)->fCompEnergyGrid;
+    delete[] (*theGammaData)->fConvCompMacXsecData;
+    delete[] (*theGammaData)->fElemSelectorConvStartIndexPerMat;
+    delete[] (*theGammaData)->fElemSelectorConvEgrid;
+    delete[] (*theGammaData)->fElemSelectorConvData;
     delete *theGammaData;
     *theGammaData = nullptr;
   }
@@ -86,16 +65,18 @@ void CopyGammaDataToDevice(struct G4HepEmGammaData* onHOST, struct G4HepEmGammaD
   // -- go for the conversion element selector related data
   int numElSelE   = onHOST->fElemSelectorConvEgridSize;
   int numElSelDat = onHOST->fElemSelectorConvNumData;
-  gmDataHTo_d->fElemSelectorConvEgridSize   = numElSelE;
-  gmDataHTo_d->fElemSelectorConvNumData     = numElSelDat;
-  gmDataHTo_d->fElemSelectorConvLogMinEkin  = onHOST->fElemSelectorConvLogMinEkin;
-  gmDataHTo_d->fElemSelectorConvEILDelta    = onHOST->fElemSelectorConvEILDelta;
-  gpuErrchk ( cudaMalloc ( &(gmDataHTo_d->fElemSelectorConvStartIndexPerMat), sizeof( int ) * numHepEmMat ) );
-  gpuErrchk ( cudaMemcpy (   gmDataHTo_d->fElemSelectorConvStartIndexPerMat,  onHOST->fElemSelectorConvStartIndexPerMat, sizeof( int ) * numHepEmMat, cudaMemcpyHostToDevice ) );
-  gpuErrchk ( cudaMalloc ( &(gmDataHTo_d->fElemSelectorConvEgrid), sizeof( double ) * numElSelE ) );
-  gpuErrchk ( cudaMemcpy (   gmDataHTo_d->fElemSelectorConvEgrid,  onHOST->fElemSelectorConvEgrid, sizeof( double ) * numElSelE,   cudaMemcpyHostToDevice ) );
-  gpuErrchk ( cudaMalloc ( &(gmDataHTo_d->fElemSelectorConvData),  sizeof( double ) * numElSelDat ) );
-  gpuErrchk ( cudaMemcpy (   gmDataHTo_d->fElemSelectorConvData,   onHOST->fElemSelectorConvData,  sizeof( double ) * numElSelDat, cudaMemcpyHostToDevice ) );
+  if (numElSelDat > 0) {
+    gmDataHTo_d->fElemSelectorConvEgridSize   = numElSelE;
+    gmDataHTo_d->fElemSelectorConvNumData     = numElSelDat;
+    gmDataHTo_d->fElemSelectorConvLogMinEkin  = onHOST->fElemSelectorConvLogMinEkin;
+    gmDataHTo_d->fElemSelectorConvEILDelta    = onHOST->fElemSelectorConvEILDelta;
+    gpuErrchk ( cudaMalloc ( &(gmDataHTo_d->fElemSelectorConvStartIndexPerMat), sizeof( int ) * numHepEmMat ) );
+    gpuErrchk ( cudaMemcpy (   gmDataHTo_d->fElemSelectorConvStartIndexPerMat,  onHOST->fElemSelectorConvStartIndexPerMat, sizeof( int ) * numHepEmMat, cudaMemcpyHostToDevice ) );
+    gpuErrchk ( cudaMalloc ( &(gmDataHTo_d->fElemSelectorConvEgrid), sizeof( double ) * numElSelE ) );
+    gpuErrchk ( cudaMemcpy (   gmDataHTo_d->fElemSelectorConvEgrid,  onHOST->fElemSelectorConvEgrid, sizeof( double ) * numElSelE,   cudaMemcpyHostToDevice ) );
+    gpuErrchk ( cudaMalloc ( &(gmDataHTo_d->fElemSelectorConvData),  sizeof( double ) * numElSelDat ) );
+    gpuErrchk ( cudaMemcpy (   gmDataHTo_d->fElemSelectorConvData,   onHOST->fElemSelectorConvData,  sizeof( double ) * numElSelDat, cudaMemcpyHostToDevice ) );
+  }
   //
   // Finaly copy the top level, i.e. the main struct with the already
   // appropriate pointers to device side memory locations but stored on the host

@@ -56,16 +56,16 @@ bool TestXSectionData ( const struct G4HepEmData* hepEmData, bool iselectron ) {
     double minEKin     = iselectron ? 0.98*2.0*secElCutE : 0.98*secElCutE;
     // generate a unifomly random kinetic energy point in the allowed (+- 2%) primary
     // particle kinetic energy range on logarithmic scale
-    double lMinEkin    = std::log(minEKin);
-    double lEkinDelta  = std::log(maxEKin/minEKin);
+    double lMinEkin    = log(minEKin);
+    double lEkinDelta  = log(maxEKin/minEKin);
     tsInLogEkinIoni[i] = dis(gen)*lEkinDelta+lMinEkin;
-    tsInEkinIoni[i]    = std::exp(tsInLogEkinIoni[i]);
+    tsInEkinIoni[i]    = exp(tsInLogEkinIoni[i]);
     // == Bremsstrahlung: (the same with different limits)
     minEKin            = 0.98*theMatCutData->fMatCutData[imc].fSecGamProdCutE;
-    lMinEkin           = std::log(minEKin);
-    lEkinDelta         = std::log(maxEKin/minEKin);
+    lMinEkin           = log(minEKin);
+    lEkinDelta         = log(maxEKin/minEKin);
     tsInLogEkinBrem[i] = dis(gen)*lEkinDelta+lMinEkin;
-    tsInEkinBrem[i]    = std::exp(tsInLogEkinBrem[i]);
+    tsInEkinBrem[i]    = exp(tsInLogEkinBrem[i]);
   }
   //
   // Use a G4HepEmElectronManager object to evaluate the restricted macroscopic

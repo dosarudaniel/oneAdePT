@@ -82,8 +82,10 @@ __global__ void TransportGammas(Track *gammas, const adept::MParray *active, Sec
       atomicAdd(&scoring->hits, 1);
 
       activeQueue->push_back(slot);
-      relocateQueue->push_back(slot);
+      //relocateQueue->push_back(slot);
 
+      //LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
+      
       // Move to the next boundary.
       currentTrack.SwapStates();
       continue;

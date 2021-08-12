@@ -206,9 +206,9 @@ inline VECCORE_ATT_HOST_DEVICE void ConstFieldHelixStepper::DoStep(vecgeom::Vect
 
   // printf("CVFHS> phi= %g \n", vecCore::Get(phi,0) );  // phi (scalar)  or phi[0] (vector)
 
-  Real_t cosphi; //  = cos(phi);
-  Real_t sinphi; //  = sin(phi);
-  sincos(phi, &sinphi, &cosphi);
+  Real_t cosphi = cos(phi);
+  Real_t sinphi  = sin(phi);
+  //sincos(phi, &sinphi, &cosphi);
 
   endPosition = startPosition + R * (cosphi - 1) * dirCrossVB - R * sinphi * dirVelX +
                 step * UVdotUB * dir1Field; //   'Drift' along field direction

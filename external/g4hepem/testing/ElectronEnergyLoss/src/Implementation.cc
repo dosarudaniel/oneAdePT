@@ -50,12 +50,12 @@ bool TestElossData ( const struct G4HepEmData* hepEmData, bool iselectron ) {
   double* tsOutResDEDX      = new double[numTestCases];
   double* tsOutResInvRange  = new double[numTestCases];
   // generate the test cases: mat-cut indices and kinetic energy combinations
-  const double lMinELoss   = std::log(minELoss);
-  const double lELossDelta = std::log(maxELoss/minELoss);
+  const double lMinELoss   = log(minELoss);
+  const double lELossDelta = log(maxELoss/minELoss);
   for (int i=0; i<numTestCases; ++i) {
     tsInImc[i]     = (int)(dis(gen)*numMCData);
     tsInLogEkin[i] = dis(gen)*lELossDelta+lMinELoss;
-    tsInEkin[i]    = std::exp(tsInLogEkin[i]);
+    tsInEkin[i]    = exp(tsInLogEkin[i]);
   }
   //
   // Use a G4HepEmElectronManager object to evaluate the range, dedx and inverse-range

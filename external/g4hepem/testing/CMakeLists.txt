@@ -12,18 +12,20 @@ target_link_libraries(TestUtils PUBLIC ${Geant4_LIBRARIES})
 ## ----------------------------------------------------------------------------
 ## 2. Add the unit test applications
 ##
+find_package(GTest QUIET)
+if(GTest_FOUND)
+  add_subdirectory(G4HepEmDataInterfaces)
+else()
+  message(STATUS "Disabling G4HepEmDataInterfaces: GTest not found")
+endif()
+
 add_subdirectory(ElectronEnergyLoss)
 add_subdirectory(ElectronTargetElementSelector)
 add_subdirectory(GammaTargetElementSelector)
 add_subdirectory(ElectronXSections)
 add_subdirectory(GammaXSections)
 add_subdirectory(MaterialAndRelated)
-# Data test requires Geant4 GDML, so only add if supported
-if(Geant4_gdml_FOUND)
-  add_subdirectory(DataImportExport)
-else()
-  message(STATUS "Disabling TestDataImportExport: Geant4 GDML not found")
-endif()
+add_subdirectory(DataImportExport)
 
 ## ----------------------------------------------------------------------------
 ## 3. Add the developer-only test applications

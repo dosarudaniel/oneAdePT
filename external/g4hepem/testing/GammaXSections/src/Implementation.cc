@@ -48,9 +48,9 @@ bool TestGammaXSectionData ( const struct G4HepEmData* hepEmData ) {
   double* tsOutMXComp     = new double[numTestCases];
   // the maximum (+2%) primary particle kinetic energy that is covered by the
   // simulation (100 TeV by default). alos use -2% for the low energy limit.
-  const double     maxLEKin = std::log(1.02*theGammaData->fConvEnergyGrid[numConvData-1]);
-  const double minLEKinConv = std::log(theGammaData->fConvEnergyGrid[0]*0.98);
-  const double minLEKinComp = std::log(theGammaData->fCompEnergyGrid[0]*0.98);
+  const double     maxLEKin = log(1.02*theGammaData->fConvEnergyGrid[numConvData-1]);
+  const double minLEKinConv = log(theGammaData->fConvEnergyGrid[0]*0.98);
+  const double minLEKinComp = log(theGammaData->fCompEnergyGrid[0]*0.98);
   for (int i=0; i<numTestCases; ++i) {
     int imat           = (int)(dis(gen)*numMatData);
     tsInImat[i]        = imat;
@@ -58,12 +58,12 @@ bool TestGammaXSectionData ( const struct G4HepEmData* hepEmData ) {
     double lMinEkin    = minLEKinConv;
     double lEkinDelta  = maxLEKin - minLEKinConv;
     tsInLogEkinConv[i] = dis(gen)*lEkinDelta+minLEKinConv;
-    tsInEkinConv[i]    = std::exp(tsInLogEkinConv[i]);
+    tsInEkinConv[i]    = exp(tsInLogEkinConv[i]);
     // -- Compton
     lMinEkin           = minLEKinComp;
     lEkinDelta         = maxLEKin - minLEKinComp;
     tsInLogEkinComp[i] = dis(gen)*lEkinDelta+minLEKinComp;
-    tsInEkinComp[i]    = std::exp(tsInLogEkinComp[i]);
+    tsInEkinComp[i]    = exp(tsInLogEkinComp[i]);
   }
   //
   // Use a G4HepEmGammaManager object to evaluate the macroscopic cross sections
