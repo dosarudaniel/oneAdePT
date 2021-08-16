@@ -1,4 +1,4 @@
-Step 0 Get the llvm sycl branch:   
+### Step 0 Get the llvm sycl branch:   
 `export DPCPP_HOME=~/sycl_workspace_aug`   
 `mkdir $DPCPP_HOME`   
 `cd $DPCPP_HOME`   
@@ -10,7 +10,7 @@ Step 0 Get the llvm sycl branch:
 `ninja install`
    
 ### Step 1 Set up the environment variables:     
-`. configure.sh`    
+`. configure_aug.sh`    
    
 ### Step 2 Configure cmake:   
 `mkdir build && cd build`         
@@ -26,7 +26,6 @@ or
 
 
 #### Profiling (on devcloud)
-
 Complete the executable path in the `vtune_collect.sh` script and submit the job:    
 `qsub -l nodes=1:gpu:ppn=2 -d . vtune_collect.sh`
 
