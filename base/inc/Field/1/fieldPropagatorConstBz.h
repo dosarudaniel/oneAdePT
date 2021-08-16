@@ -98,13 +98,7 @@ double fieldPropagatorConstBz::ComputeStepAndPropagatedState(
 
   constexpr double gEpsilonDeflect = 1.E-2 * copcore::units::cm;
 
-  // acceptable lateral error from field ~ related to delta_chord sagital distance
-
-  // constexpr double invEpsD= 1.0 / gEpsilonDeflect;
-
-  double safeLength =
-      sqrt(2 * gEpsilonDeflect / curv); // max length along curve for deflectionn
-                                        // = sqrt( 2.0 / ( invEpsD * curv) ); // Candidate for fast inv-sqrt
+  double safeLength = sqrt(2 * gEpsilonDeflect / curv);
 
   ConstBzFieldStepper helixBz(BzValue);
 
@@ -142,11 +136,11 @@ double fieldPropagatorConstBz::ComputeStepAndPropagatedState(
       vecgeom::Vector3D<double> chordDir = (1.0 / chordLen) * chordVec;
 
       double move;
-      //      if (Relocate) {
-      //        move = LoopNavigator::ComputeStepAndPropagatedState(position, chordDir, chordLen, current_state, next_state);
-      //     } else {
-      //  move = LoopNavigator::ComputeStepAndNextVolume(position, chordDir, chordLen, current_state, next_state);
-      //  }
+      // if (Relocate) {
+      //   move = LoopNavigator::ComputeStepAndPropagatedState(position, chordDir, chordLen, current_state, next_state);
+      // } else {
+      //   move = LoopNavigator::ComputeStepAndNextVolume(position, chordDir, chordLen, current_state, next_state);
+      // }
 
       fullChord = (move == chordLen);
       if (fullChord) {

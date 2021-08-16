@@ -112,7 +112,6 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 
     // Check if there's a volume boundary in between.
 
-    // *ERROR*
     double geometryStepLength = 1.0;
         fieldPropagatorBz.ComputeStepAndPropagatedState<false>(
         currentTrack.energy, Mass, Charge, geometricalStepLengthFromPhysics, currentTrack.pos, currentTrack.dir,
@@ -178,6 +177,14 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
       activeQueue->push_back(slot);
       // relocateQueue->push_back(slot);
       
+      /*
+      This step is required 
+      dadosaru@pcphsft106:~/VecGeom/VecGeom$ clang-13 -x cu -fgpu-rdc --cuda-gpu-arch=sm_50 
+      ../source/NavStateIndex.cpp -emit-llvm -c -I../ 
+      -I../vecgeom-build -I/home/dadosaru/local/include/ -DVECCORE_CUDA=1
+
+      The .bc file needs to be passed to the llvm-link step of the compilation.
+      */
       #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
         LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
       #endif
@@ -256,7 +263,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
       double dirPrimary[] = {currentTrack.dir.x(), currentTrack.dir.y(), currentTrack.dir.z()};
       double dirSecondary[3];
 
-      // *ERROR*      SampleDirectionsBrem(energy, deltaEkin, dirSecondary, dirPrimary, &rnge);
+      SampleDirectionsBrem(energy, deltaEkin, dirSecondary, dirPrimary, &rnge);
 
       
       Track &gamma = secondaries.gammas.NextTrack();
@@ -282,8 +289,8 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
       double theGamma1Ekin, theGamma2Ekin;
       double theGamma1Dir[3], theGamma2Dir[3];
       
-      // *ERROR*  SampleEnergyAndDirectionsForAnnihilationInFlight(energy, dirPrimary, &theGamma1Ekin, theGamma1Dir, &theGamma2Ekin,
-      //                                                 theGamma2Dir, &rnge);
+      SampleEnergyAndDirectionsForAnnihilationInFlight(energy, dirPrimary, &theGamma1Ekin, theGamma1Dir, &theGamma2Ekin,
+                                                      theGamma2Dir, &rnge);
 
       Track &gamma1 = secondaries.gammas.NextTrack();
       Track &gamma2 = secondaries.gammas.NextTrack();
@@ -300,7 +307,6 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
       gamma2.dir.Set(theGamma2Dir[0], theGamma2Dir[1], theGamma2Dir[2]);
 
       // The current track is killed by not enqueuing into the next activeQueue.
-
       break;
     }
 

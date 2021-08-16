@@ -105,12 +105,13 @@ int main(int argc, char *argv[])
 
   InitGeant4();
 
-// #ifdef VECGEOM_GDML
-//   vecgeom::GeoManager::Instance().SetTransformationCacheDepth(cache_depth);
-//   // The vecgeom millimeter unit is the last parameter of vgdml::Frontend::Load
-//   bool load = vgdml::Frontend::Load(gdml_name.c_str(), false, copcore::units::mm);
-//   if (!load) return 3;
-// #endif
+// 14.08: this code issues undefined references when compiling step by step with -### 
+#ifdef VECGEOM_GDML
+  vecgeom::GeoManager::Instance().SetTransformationCacheDepth(cache_depth);
+  // The vecgeom millimeter unit is the last parameter of vgdml::Frontend::Load
+  bool load = vgdml::Frontend::Load(gdml_name.c_str(), false, copcore::units::mm);
+  if (!load) return 3;
+#endif
 
   const vecgeom::VPlacedVolume *world = vecgeom::GeoManager::Instance().GetWorld();
 
