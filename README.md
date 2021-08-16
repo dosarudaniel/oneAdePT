@@ -9,15 +9,18 @@
 `cd llvm/build`     
 `ninja install`
    
-### Step 1 Set up the environment variables:     
+### Step 1 Set up the environment variables: 
+`cd`  -- go to home directory or what directory you prefer     
+`git clone https://github.com/dosarudaniel/oneAdePT`       
+`cd oneAdePT`      
 `. configure_aug.sh`    
    
 ### Step 2 Configure cmake:   
 `mkdir build && cd build`         
-`cmake ../ -DCMAKE_INSTALL_PREFIX="~/local" -DSYCL_ROOT=${SYCL_ROOT_DIR} -DCMAKE_CXX_COMPILER=${SYCL_ROOT_DIR}/bin/clang++`   
+`cmake ../ -DCMAKE_INSTALL_PREFIX="~/local" -DSYCL_ROOT=${SYCL_ROOT_DIR}`   
    
 ### Step 3 To compile:   
-`make`   
+`make example9.1`   
    
 ### Step 4 To run test1:   
 `SYCL_DEVICE_FILTER=PI_LEVEL_ZERO ./tests/test1`  
