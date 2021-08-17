@@ -1,4 +1,4 @@
-Step 0 Get the llvm sycl branch:   
+### Step 0 Get the llvm sycl branch:   
 `export DPCPP_HOME=~/sycl_workspace_aug`   
 `mkdir $DPCPP_HOME`   
 `cd $DPCPP_HOME`   
@@ -9,15 +9,18 @@ Step 0 Get the llvm sycl branch:
 `cd llvm/build`     
 `ninja install`
    
-### Step 1 Set up the environment variables:     
-`. configure.sh`    
+### Step 1 Set up the environment variables: 
+`cd`  -- go to home directory or what directory you prefer     
+`git clone https://github.com/dosarudaniel/oneAdePT`       
+`cd oneAdePT`      
+`. configure_aug.sh`    
    
 ### Step 2 Configure cmake:   
 `mkdir build && cd build`         
-`cmake ../ -DCMAKE_INSTALL_PREFIX="~/local" -DSYCL_ROOT=${SYCL_ROOT_DIR} -DCMAKE_CXX_COMPILER=${SYCL_ROOT_DIR}/bin/clang++`   
+`cmake .. -DCMAKE_INSTALL_PREFIX="~/local" -DSYCL_ROOT=/home/dadosaru/sycl_workspace_aug/llvm/build/install`   
    
 ### Step 3 To compile:   
-`make`   
+`make example9.1`   
    
 ### Step 4 To run test1:   
 `SYCL_DEVICE_FILTER=PI_LEVEL_ZERO ./tests/test1`  
@@ -26,7 +29,6 @@ or
 
 
 #### Profiling (on devcloud)
-
 Complete the executable path in the `vtune_collect.sh` script and submit the job:    
 `qsub -l nodes=1:gpu:ppn=2 -d . vtune_collect.sh`
 
