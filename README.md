@@ -17,7 +17,7 @@
    
 ### Step 2 Configure cmake:   
 `mkdir build && cd build`         
-`cmake ../ -DCMAKE_INSTALL_PREFIX="~/local" -DSYCL_ROOT=${SYCL_ROOT_DIR}`   
+`cmake .. -DCMAKE_INSTALL_PREFIX="~/local" -DSYCL_ROOT=/home/dadosaru/sycl_workspace_aug/llvm/build/install`   
    
 ### Step 3 To compile:   
 `make example9.1`   
