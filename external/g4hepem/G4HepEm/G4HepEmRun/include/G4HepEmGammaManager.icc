@@ -21,6 +21,9 @@
 #include "G4HepEmGammaInteractionPhotoelectric.hh"
 
 #include <iostream>
+#include <CL/sycl.hpp>
+
+SYCL_EXTERNAL double GetSplineLog(int ndata, double* xdata, double* ydata, double x, double logx, double logxmin, double invLDBin);
 
 // Note: pStepLength will be set here i.e. this is the first access to it that
 //       will clear the previous step value.

@@ -15,6 +15,29 @@
 #include "G4HepEmMath.hh"
 
 #include <iostream>
+#include <CL/sycl.hpp>
+
+#if (defined( __SYCL_DEVICE_ONLY__))
+#define log sycl::log
+#define exp sycl::exp
+#define cos sycl::cos
+#define sin sycl::sin
+#define pow sycl::pow
+#define frexp sycl::frexp
+#define ldexp sycl::ldexp
+#define modf sycl::modf
+#else
+#define log std::log
+#define exp std::exp
+#define cos std::cos
+#define sin std::sin
+#define pow std::pow
+#define frexp std::frexp
+#define ldexp std::ldexp
+#define modf std::modf
+#endif
+
+SYCL_EXTERNAL void RotateToReferenceFrame(double* dir, const double* refDir);
 
 void PerformGammaConversion(G4HepEmTLData* tlData, struct G4HepEmData* hepEmData) {
   G4HepEmTrack* thePrimaryTrack = tlData->GetPrimaryGammaTrack()->GetTrack();
@@ -121,6 +144,7 @@ void SampleKinEnergies(struct G4HepEmData* hepEmData, double thePrimEkin, double
 
 void SampleDirections(const double* orgGammaDir, double* secElDir, double* secPosDir, const double secElEkin, const double secPosEkin, G4HepEmRandomEngine* rnge) {
   // sample azimuthal angle (2Pi symmetric)
+  /*
   const double  phi    = k2Pi*rnge->flat();
   const double cosPhi  = cos(phi);
   const double sinPhi  = sin(phi);
@@ -140,6 +164,7 @@ void SampleDirections(const double* orgGammaDir, double* secElDir, double* secPo
   secPosDir[2] = costPos;
   // rotate to refernce frame (G4HepEmRunUtils function) to get it in lab. frame
   RotateToReferenceFrame(secPosDir, orgGammaDir);
+  */
 }
 
 
@@ -147,6 +172,7 @@ void SampleDirections(const double* orgGammaDir, double* secElDir, double* secPo
 // should be called only for mat-cuts with more than one elements in their material
 int SelectTargetAtom(const struct G4HepEmGammaData* gmData, const int imat, const double ekin,
                      const double lekin, const double urndn) {
+                       /*
   // start index for this material
   const int   indxStart = gmData->fElemSelectorConvStartIndexPerMat[imat];
   const double* theData = &(gmData->fElemSelectorConvData[indxStart]);
@@ -170,11 +196,14 @@ int SelectTargetAtom(const struct G4HepEmGammaData* gmData, const int imat, cons
   int theElemIndex = 0;
   while (theElemIndex<numElem-1 && urndn > theData[indx0+theElemIndex]+b*(theData[indx1+theElemIndex]-theData[indx0+theElemIndex])) { ++theElemIndex; }
   return theElemIndex;
+  */
+  return 1;
 }
 
 
 double SampleEnergyRateNoLPM(const double normCond, const double epsMin, const double epsRange, const double deltaFactor,
                const double invF10, const double invF20, const double fz, G4HepEmRandomEngine* rnge) {
+                 /*
   double rndmv[3];
   double greject = 0.;
   double eps     = 0.;
@@ -193,6 +222,7 @@ double SampleEnergyRateNoLPM(const double normCond, const double epsMin, const d
   } while (greject < rndmv[2]);
   //  end of eps sampling
   return eps;
+  */ return 1.0;
 }
 
 

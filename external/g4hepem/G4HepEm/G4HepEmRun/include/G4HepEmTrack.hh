@@ -15,25 +15,26 @@
 // speacial for charged particle tracks and their simualtion.
 
 #include <cmath>
+#include <CL/sycl.hpp>
 
 #if (defined( __SYCL_DEVICE_ONLY__))
 #define log sycl::log
-#define exp sycl::exp
-#define cos sycl::cos
-#define sin sycl::sin
-#define pow sycl::pow
-#define frexp sycl::frexp
-#define ldexp sycl::ldexp
-#define modf sycl::modf
+// #define exp sycl::exp
+// #define cos sycl::cos
+// #define sin sycl::sin
+// #define pow sycl::pow
+// #define frexp sycl::frexp
+// #define ldexp sycl::ldexp
+// #define modf sycl::modf
 #else
 #define log std::log
-#define exp std::exp
-#define cos std::cos
-#define sin std::sin
-#define pow std::pow
-#define frexp std::frexp
-#define ldexp std::ldexp
-#define modf std::modf
+// #define exp std::exp
+// #define cos std::cos
+// #define sin std::sin
+// #define pow std::pow
+// #define frexp std::frexp
+// #define ldexp std::ldexp
+// #define modf std::modf
 #endif
 
 class G4HepEmTrack {

@@ -36,7 +36,7 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
                         struct G4HepEmParameters *g4HepEmPars_p,
                         struct G4HepEmData *g4HepEmData_p)
 {
-  /*
+  
   int activeSize = active->size();
   for (int i = item_ct1.get_group(2) * item_ct1.get_local_range().get(2) +
                item_ct1.get_local_id(2);
@@ -44,6 +44,11 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
        i += item_ct1.get_local_range().get(2) * item_ct1.get_group_range(2)) {
     const int slot      = (*active)[i];
     Track &currentTrack = gammas[slot];
+
+    /*The commented piece of code below triggers 
+        ptxas fatal   : Unresolved extern function '_ZN7vecgeom20globaldevicegeomdata11GetNavIndexEv'
+      Manually changing the linking steps might fix this issue.
+     */
     // auto volume         = currentTrack.currentState.Top();
     // if (volume == nullptr) {
     //   // The particle left the world, kill it by not enqueuing into activeQueue.
@@ -77,9 +82,13 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
     // also need to carry them over!
 
     // Check if there's a volume boundary in between.
+
     double geometryStepLength = 1.0;
-        // LoopNavigator::ComputeStepAndNextVolume(currentTrack.pos, currentTrack.dir, geometricalStepLengthFromPhysics,
-        //                                         currentTrack.currentState, currentTrack.nextState);
+    /*
+    ptxas fatal   : Unresolved extern function '_ZN7vecgeom4cuda13NavStateIndex13TopMatrixImplEjRNS0_16Transformation3DE'
+    */
+    // double geometryStepLength = LoopNavigator::ComputeStepAndNextVolume(currentTrack.pos, currentTrack.dir, geometricalStepLengthFromPhysics,
+    //                               currentTrack.currentState, currentTrack.nextState);
     currentTrack.pos += (geometryStepLength + kPush) * currentTrack.dir;
 
     if (currentTrack.nextState.IsOnBoundary()) {
@@ -100,10 +109,20 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
       sycl::atomic<int>(sycl::global_ptr<int>(&scoring->hits)).fetch_add(1);
 
       activeQueue->push_back(slot);
-      //relocateQueue->push_back(slot);
+      relocateQueue->push_back(slot);
 
-      //LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
-      
+      /*
+      This step is required 
+      dadosaru@pcphsft106:~/VecGeom/VecGeom$ clang-13 -x cu -fgpu-rdc --cuda-gpu-arch=sm_50 
+      ../source/NavStateIndex.cpp -emit-llvm -c -I../ 
+      -I../vecgeom-build -I/home/dadosaru/local/include/ -DVECCORE_CUDA=1
+
+      The .bc file needs to be passed to the llvm-link step of the compilation.
+      */
+      // #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
+      //   LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
+      // #endif
+
       // Move to the next boundary.
       currentTrack.SwapStates();
       continue;
@@ -163,7 +182,17 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
       }
       const double origDirPrimary[] = {currentTrack.dir.x(), currentTrack.dir.y(), currentTrack.dir.z()};
       double dirPrimary[3];
+
+      /* 
+      The SamplePhotonEnergyAndDirection call issued the following error: 
+      fatal error: error in backend: Cannot select: t37: f64 = fcos t36
+            t36: f64 = fmul t34, ConstantFP:f64<6.283185e+00>
+
+      Added #define math macros in external/g4hepem/G4HepEm/G4HepEmRun/include/G4HepEmGammaInteractionCompton.icc and it worked.
+      */
       const double newEnergyGamma = SamplePhotonEnergyAndDirection(energy, dirPrimary, origDirPrimary, &rnge);
+
+
       vecgeom::Vector3D<double> newDirGamma(dirPrimary[0], dirPrimary[1], dirPrimary[2]);
 
       const double energyEl = energy - newEnergyGamma;
@@ -202,5 +231,5 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
     }
     }
   }
-  */
+  
 }
