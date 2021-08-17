@@ -185,9 +185,9 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 
       The .bc file needs to be passed to the llvm-link step of the compilation.
       */
-      // #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
-      //   LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
-      // #endif
+      #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
+        LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
+      #endif
 
       // Move to the next boundary.
       currentTrack.SwapStates();
@@ -229,10 +229,8 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
       double dirPrimary[] = {currentTrack.dir.x(), currentTrack.dir.y(), currentTrack.dir.z()};
       double dirSecondary[3];
 
-      // ERROR
       SampleDirectionsIoni(energy, deltaEkin, dirSecondary, dirPrimary, &rnge);
       
-
       Track &secondary = secondaries.electrons.NextTrack();
 
 
