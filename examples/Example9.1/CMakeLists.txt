@@ -20,9 +20,10 @@ target_include_directories(example9.1 PUBLIC
       $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/base/inc/G4HepEm>
       $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/base/inc>
       $<INSTALL_INTERFACE:base>)
-target_link_libraries(example9.1 PRIVATE VecGeom::vecgeom VecGeom::vecgeomcuda_static VecGeom::vgdml ${Geant4_LIBRARIES} G4HepEm::g4HepEmData G4HepEm::g4HepEmInit G4HepEm::g4HepEmRun ${SYCL_FLAGS} ${EXTRA_FLAGS})
+target_link_libraries(example9.1 PRIVATE VecGeom::vgdml VecGeom::vecgeom VecGeom::vecgeomcuda_static  ${Geant4_LIBRARIES} G4HepEm::g4HepEmData G4HepEm::g4HepEmInit G4HepEm::g4HepEmRun ${SYCL_FLAGS} ${EXTRA_FLAGS})
 target_compile_options(example9.1  PUBLIC ${SYCL_FLAGS} ${EXTRA_FLAGS})
 
 # force the compiler to use the OpenCL from sycl, not the one from CUDA (older version)
 target_include_directories(example9.1 SYSTEM BEFORE PUBLIC ${SYCL_INCLUDE_DIR})
+set_target_properties(example9.1 PROPERTIES CUDA_SEPARABLE_COMPILATION ON CUDA_RESOLVE_DEVICE_SYMBOLS ON)
 
