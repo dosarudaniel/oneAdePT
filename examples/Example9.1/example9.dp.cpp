@@ -117,13 +117,13 @@ static G4HepEmState *InitG4HepEm(sycl::queue q_ct1,
   dataOnDevice.fTheSBTableData  = state->data.fTheSBTableData;
   dataOnDevice.fTheGammaData    = state->data.fTheGammaData;
   // The other pointers should never be used.
-  dataOnDevice.fTheMatCutData   = nullptr;
-  dataOnDevice.fTheMaterialData = nullptr;
-  dataOnDevice.fTheElementData  = nullptr;
-  dataOnDevice.fTheElectronData = nullptr;
-  dataOnDevice.fThePositronData = nullptr;
-  dataOnDevice.fTheSBTableData  = nullptr;
-  dataOnDevice.fTheGammaData   = nullptr;
+  dataOnDevice.fTheMatCutData_gpu   = nullptr;
+  dataOnDevice.fTheMaterialData_gpu = nullptr;
+  dataOnDevice.fTheElementData_gpu  = nullptr;
+  dataOnDevice.fTheElectronData_gpu = nullptr;
+  dataOnDevice.fThePositronData_gpu = nullptr;
+  dataOnDevice.fTheSBTableData_gpu  = nullptr;
+  dataOnDevice.fTheGammaData_gpu    = nullptr;
  #endif
   /*
   DPCT1003:1: Migrated API does not return error code. (*, 0) is inserted. You
