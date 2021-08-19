@@ -42,7 +42,7 @@
   #undef VECGEOM_GEANT4
   #undef VECGEOM_BENCHMARK
 #else
-  #undef G4HepEm_CUDA_BUILD
+//  #undef G4HepEm_CUDA_BUILD
   // Not compiling with NVCC
   #define VECGEOM_IMPL_NAMESPACE cxx
   #define VECGEOM_NAMESPACE ::vecgeom
