@@ -66,7 +66,7 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
     for (int ip = 0; ip < 3; ++ip) {
       double numIALeft = currentTrack.numIALeft[ip];
       if (numIALeft <= 0) {
-	numIALeft = -log(currentTrack.Uniform());
+	      numIALeft = -log(currentTrack.Uniform());
         currentTrack.numIALeft[ip] = numIALeft;
       }
       emTrack.SetNumIALeft(numIALeft, ip);
@@ -88,7 +88,7 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
     ptxas fatal   : Unresolved extern function '_ZN7vecgeom4cuda13NavStateIndex13TopMatrixImplEjRNS0_16Transformation3DE'
     */
     #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
-    geometryStepLength = LoopNavigator::ComputeStepAndNextVolume(currentTrack.pos, currentTrack.dir, geometricalStepLengthFromPhysics,
+      geometryStepLength = LoopNavigator::ComputeStepAndNextVolume(currentTrack.pos, currentTrack.dir, geometricalStepLengthFromPhysics,
                                   currentTrack.currentState, currentTrack.nextState);
     #endif
     currentTrack.pos += (geometryStepLength + kPush) * currentTrack.dir;

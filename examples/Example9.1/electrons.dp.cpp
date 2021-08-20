@@ -70,11 +70,11 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 
     const int slot      = (*active)[i];
     Track &currentTrack = electrons[slot];
-    // auto volume         = currentTrack.currentState.Top();
-    // if (volume == nullptr) {
-    //   // The particle left the world, kill it by not enqueuing into activeQueue.
-    //   continue;
-    // }
+    auto volume         = currentTrack.currentState.Top();
+    if (volume == nullptr) {
+      // The particle left the world, kill it by not enqueuing into activeQueue.
+      continue;
+    }
 
     // Init a track with the needed data to call into G4HepEm.
     G4HepEmElectronTrack elTrack;
@@ -175,7 +175,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
       sycl::atomic<int>(sycl::global_ptr<int>(&scoring->hits)).fetch_add(1);
 
       activeQueue->push_back(slot);
-      // relocateQueue->push_back(slot);
+      relocateQueue->push_back(slot);
       
       /*
       This step is required 
@@ -321,7 +321,6 @@ template void TransportElectrons<true>(Track *electrons, const adept::MParray *a
                struct G4HepEmElectronManager *electronManager,
                struct G4HepEmParameters *g4HepEmPars,
                struct G4HepEmData *g4HepEmData);
-
 
 
 template void TransportElectrons<false>(Track *electrons, const adept::MParray *active,
