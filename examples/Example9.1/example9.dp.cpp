@@ -171,6 +171,9 @@ void InitParticleQueues(ParticleQueues queues, size_t Capacity)
   adept::MParray::MakeInstanceAt(Capacity, queues.relocate);
 }
 
+class my_kernel;
+
+
 // Kernel function to initialize a set of primary particles.
 SYCL_EXTERNAL void InitPrimaries(ParticleGenerator generator, int particles, double energy,
 		   const vecgeom::VPlacedVolume *world,
@@ -238,7 +241,6 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
 #else
   const vecgeom::VPlacedVolume *world_dev = world;
 #endif
-  
   G4HepEmState *state = InitG4HepEm(q_ct1, electronManager_p, gammaManager_p, g4HepEmPars_p, g4HepEmData_p);
 
   // Capacity of the different containers aka the maximum number of particles.
@@ -270,13 +272,31 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
 
     particles[i].queues.relocate = (adept::MParray *)sycl::malloc_device(QueueSize, q_ct1);
 
-    q_ct1.submit([&](sycl::handler &cgh) {
-      auto particles_i_queues_ct0 = particles[i].queues;
+    std::cout <<  "Running on - part 2"
+	    << q_ct1.get_device().get_info<cl::sycl::info::device::name>()
+	    << "\n";
 
-      cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
-          [=](sycl::nd_item<3> item_ct1) {
-            InitParticleQueues(particles_i_queues_ct0, Capacity);
-          });
+    int a = 18, b = 24, r = 0;
+    auto bufA = sycl::buffer{&a, sycl::range{1}};
+    auto bufB = sycl::buffer{&b, sycl::range{1}};
+    auto bufR = sycl::buffer{&r, sycl::range{1}};
+
+    q_ct1.submit([&](sycl::handler& cgh) {
+
+      auto accA = sycl::accessor{bufA, cgh, sycl::read_only}; 
+      auto accB = sycl::accessor{bufB, cgh, sycl::read_only};
+      auto accR = sycl::accessor{bufR, cgh, sycl::write_only};
+
+      cgh.single_task<my_kernel>([=]() {
+
+        accR[0] = accA[0] + accB[0];
+      });
+
+      //auto particles_i_queues_ct0 = particles[i].queues;
+      // cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
+      //     [=](sycl::nd_item<3> item_ct1) {
+      //      // InitParticleQueues(particles_i_queues_ct0, Capacity);
+      //     });
     });
 
     particles[i].stream = dev_ct1.create_queue();
