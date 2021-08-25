@@ -70,11 +70,11 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 
     const int slot      = (*active)[i];
     Track &currentTrack = electrons[slot];
-    auto volume         = currentTrack.currentState.Top();
-    if (volume == nullptr) {
-      // The particle left the world, kill it by not enqueuing into activeQueue.
-      continue;
-    }
+    // auto volume         = currentTrack.currentState.Top();
+    // if (volume == nullptr) {
+    //   // The particle left the world, kill it by not enqueuing into activeQueue.
+    //   continue;
+    // }
 
     // Init a track with the needed data to call into G4HepEm.
     G4HepEmElectronTrack elTrack;
@@ -97,7 +97,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 
     // Call G4HepEm to compute the physics step limit.
      //electronManager.HowFar(&g4HepEmData, &g4HepEmPars, &elTrack);
-     electronManager_p->HowFar(g4HepEmData_p, g4HepEmPars_p, &elTrack);
+    electronManager_p->HowFar(g4HepEmData_p, g4HepEmPars_p, &elTrack);
 
     // Get result into variables.
     double geometricalStepLengthFromPhysics = theTrack->GetGStepLength();
@@ -112,8 +112,7 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 
     // Check if there's a volume boundary in between.
 
-    double geometryStepLength = 1.0;
-        fieldPropagatorBz.ComputeStepAndPropagatedState<false>(
+    double geometryStepLength = fieldPropagatorBz.ComputeStepAndPropagatedState<false>(
         currentTrack.energy, Mass, Charge, geometricalStepLengthFromPhysics, currentTrack.pos, currentTrack.dir,
         currentTrack.currentState, currentTrack.nextState);
 				
@@ -185,9 +184,9 @@ void TransportElectrons(Track *electrons, const adept::MParray *active, Secondar
 
       The .bc file needs to be passed to the llvm-link step of the compilation.
       */
-      #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
-        LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
-      #endif
+      // #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
+      //   LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
+      // #endif
 
       // Move to the next boundary.
       currentTrack.SwapStates();

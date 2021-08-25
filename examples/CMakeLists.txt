@@ -26,3 +26,4 @@ include_directories("${CMAKE_SOURCE_DIR}/base/inc")
 
 add_subdirectory(Example9)
 add_subdirectory(Example9.1)
+add_subdirectory(Test12)

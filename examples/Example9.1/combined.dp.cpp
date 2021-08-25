@@ -321,9 +321,9 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
     // also need to carry them over!
 
     // Check if there's a volume boundary in between.
-    double geometryStepLength =
-        LoopNavigator::ComputeStepAndNextVolume(currentTrack.pos, currentTrack.dir, geometricalStepLengthFromPhysics,
-                                                currentTrack.currentState, currentTrack.nextState);
+    double geometryStepLength = 1.0;
+        // LoopNavigator::ComputeStepAndNextVolume(currentTrack.pos, currentTrack.dir, geometricalStepLengthFromPhysics,
+        //                                         currentTrack.currentState, currentTrack.nextState);
     currentTrack.pos += (geometryStepLength + kPush) * currentTrack.dir;
 
     if (currentTrack.nextState.IsOnBoundary()) {

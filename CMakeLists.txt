@@ -32,9 +32,10 @@ set(SYCL_FLAGS
         "-std=c++20"
         "-stdlib=libstdc++"
         "-Wno-unknown-cuda-version"
+        "-g"
         )
       
-set(EXTRA_FLAGS "-D_ONEADEPT_" "-DROOT_NO_INT128" "-I${CMAKE_SOURCE_DIR}/../local/include" )
+set(EXTRA_FLAGS "-D_ONEADEPT_" "-DNDEBUG" "-DROOT_NO_INT128" "-I${CMAKE_SOURCE_DIR}/../local/include" )
 
 #include_directories("-I${CMAKE_SOURCE_DIR}/base/inc")
 

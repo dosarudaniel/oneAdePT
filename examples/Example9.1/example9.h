@@ -16,7 +16,7 @@
 #include <G4HepEmElectronManager.hh>
 #include <G4HepEmGammaManager.hh>
 
-void example9(const vecgeom::VPlacedVolume *world, int numParticles, double energy, 
+void example9(/*const vecgeom::VPlacedVolume *world,*/ int numParticles, double energy, 
                 struct G4HepEmElectronManager *electronManager_p, 
                 struct G4HepEmGammaManager *gammaManager_p, 
                 struct G4HepEmParameters *g4HepEmPars_p,

@@ -41,7 +41,7 @@ set(ONEAPI_UNIT_TESTS_BASE
   test9.cpp                    # converted and modified  test_track_block.cu
   test10.cpp                   # simplified version of example9 which calls fieldPropagatorBz.ComputeStepAndPropagatedState in kernel 
   test11.cpp                   # 
-  test12.cpp		       # call stepInField in kernel
+  # test12.cpp		       # call stepInField in kernel
   )
 
 build_tests("${ONEAPI_UNIT_TESTS_BASE}")

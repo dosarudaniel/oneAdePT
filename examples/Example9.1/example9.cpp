@@ -97,25 +97,27 @@ int main(int argc, char *argv[])
   struct G4HepEmParameters *g4HepEmPars_p;
   struct G4HepEmData *g4HepEmData_p;
 
-  OPTION_STRING(gdml_name, "trackML.gdml");
-  OPTION_INT(cache_depth, 0); // 0 = full depth
+//   OPTION_STRING(gdml_name, "trackML.gdml");
+//   OPTION_INT(cache_depth, 0); // 0 = full depth
   OPTION_INT(particles, 1);
   OPTION_DOUBLE(energy, 100); // entered in GeV
   energy *= copcore::units::GeV;
 
   InitGeant4();
 
-// 14.08: this code issues undefined references when compiling step by step with -### 
-#ifdef VECGEOM_GDML
-  vecgeom::GeoManager::Instance().SetTransformationCacheDepth(cache_depth);
-  // The vecgeom millimeter unit is the last parameter of vgdml::Frontend::Load
-  bool load = vgdml::Frontend::Load(gdml_name.c_str(), false, copcore::units::mm);
-  if (!load) return 3;
-#endif
+// // 14.08: this code issues undefined references when compiling step by step with -### 
+// #ifdef VECGEOM_GDML
+//   vecgeom::GeoManager::Instance().SetTransformationCacheDepth(cache_depth);
+//   // The vecgeom millimeter unit is the last parameter of vgdml::Frontend::Load
+//   bool load = vgdml::Frontend::Load(gdml_name.c_str(), false, copcore::units::mm);
+//   if (!load) return 3;
+// #endif
 
-  const vecgeom::VPlacedVolume *world = vecgeom::GeoManager::Instance().GetWorld();
+//   const vecgeom::VPlacedVolume *world = vecgeom::GeoManager::Instance().GetWorld();
 
-  if (!world) return 4;
+//   if (!world) return 4;
 
-  example9(world, particles, energy, electronManager_p, gammaManager_p, g4HepEmPars_p, g4HepEmData_p);
+  example9(/*world,*/ particles, energy, electronManager_p, gammaManager_p, g4HepEmPars_p, g4HepEmData_p);
+
+  
 }

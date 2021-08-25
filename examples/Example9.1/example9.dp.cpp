@@ -35,14 +35,21 @@
 #include <stdio.h>
 #include <chrono>
 
+#include <CopCore/1/SystemOfUnits.h>
+
+#include <VecGeom/management/GeoManager.h>
+#ifdef VECGEOM_GDML
+#include <VecGeom/gdml/Frontend.h>
+#endif
+
 #if (defined( __SYCL_DEVICE_ONLY__))
 #define log sycl::log
 #else
 #define log std::log
 #endif
 
-// Constant data structures from G4HepEm accessed by the kernels.
-// (defined in example9.cu)
+//Constant data structures from G4HepEm accessed by the kernels.
+//(defined in example9.cu)
 
 extern SYCL_EXTERNAL void CopyG4HepEmDataToGPU(struct G4HepEmData* onCPU); 
 
@@ -191,8 +198,10 @@ SYCL_EXTERNAL void InitPrimaries(ParticleGenerator generator, int particles, dou
     track.pos = {0, 0, 0};
     track.dir = {1.0, 0, 0};
 
-    LoopNavigator::LocatePointIn(world, track.pos, track.currentState, true);
-    // nextState is initialized as needed.
+    #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
+      LoopNavigator::LocatePointIn(world, track.pos, track.currentState, true);
+    #endif
+    // // nextState is initialized as needed.
   }
 }
 
@@ -213,13 +222,31 @@ void FinishIteration(AllParticleQueues all, const GlobalScoring *scoring, Stats 
   }
 }
 
-void example9(const vecgeom::VPlacedVolume *world, int numParticles, double energy, 
+void example9(/*const vecgeom::VPlacedVolume *world,*/ int numParticles, double energy, 
               struct G4HepEmElectronManager *electronManager_p,
               struct G4HepEmGammaManager *gammaManager_p,
               struct G4HepEmParameters *g4HepEmPars_p,
               struct G4HepEmData *g4HepEmData_p)
 {
 
+
+  // OPTION_STRING(gdml_name, "trackML.gdml");
+  // OPTION_INT(cache_depth, 0); // 0 = full depth
+  // OPTION_INT(particles, 1);
+  // OPTION_DOUBLE(energy, 100); // entered in GeV
+  // energy *= copcore::units::GeV;
+
+ // InitGeant4();
+
+// 14.08: this code issues undefined references when compiling step by step with -### 
+#ifdef VECGEOM_GDML
+  vecgeom::GeoManager::Instance().SetTransformationCacheDepth(0);
+  // The vecgeom millimeter unit is the last parameter of vgdml::Frontend::Load
+  bool load = vgdml::Frontend::Load("trackML.gdml", false, copcore::units::mm);
+  if (!load) return;
+#endif
+
+  const vecgeom::VPlacedVolume *world = vecgeom::GeoManager::Instance().GetWorld();
   sycl::default_selector device_selector;
 
   sycl::queue q_ct1(device_selector);
@@ -227,6 +254,8 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
   std::cout <<  "Running on "
 	    << q_ct1.get_device().get_info<cl::sycl::info::device::name>()
 	    << "\n";
+
+
   
    dpct::device_ext &dev_ct1 = dpct::get_current_device();
 
@@ -270,7 +299,11 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
 
     particles[i].queues.relocate = (adept::MParray *)sycl::malloc_device(QueueSize, q_ct1);
 
-    q_ct1.submit([&](sycl::handler &cgh) {
+    std::cout <<  "Running on - part 2"
+	    << q_ct1.get_device().get_info<cl::sycl::info::device::name>()
+	    << "\n";
+
+    q_ct1.submit([&](sycl::handler& cgh) {
       auto particles_i_queues_ct0 = particles[i].queues;
 
       cgh.parallel_for(sycl::nd_range<3>(sycl::range<3>(1, 1, 1), sycl::range<3>(1, 1, 1)),
@@ -279,8 +312,13 @@ void example9(const vecgeom::VPlacedVolume *world, int numParticles, double ener
           });
     });
 
+
+
+
+  std::cout <<  "After queue. submit " << "\n";
+
     particles[i].stream = dev_ct1.create_queue();
-  } 
+  }
 
   dev_ct1.queues_wait_and_throw();
 

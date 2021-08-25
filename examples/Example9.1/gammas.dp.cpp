@@ -49,11 +49,11 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
         ptxas fatal   : Unresolved extern function '_ZN7vecgeom20globaldevicegeomdata11GetNavIndexEv'
       Manually changing the linking steps might fix this issue.
      */
-    auto volume         = currentTrack.currentState.Top();
-    if (volume == nullptr) {
-      // The particle left the world, kill it by not enqueuing into activeQueue.
-      continue;
-    }
+    // auto volume         = currentTrack.currentState.Top();
+    // if (volume == nullptr) {
+    //   // The particle left the world, kill it by not enqueuing into activeQueue.
+    //   continue;
+    // }
 
     // Init a track with the needed data to call into G4HepEm.
     G4HepEmTrack emTrack;
@@ -87,10 +87,10 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
     /*
     ptxas fatal   : Unresolved extern function '_ZN7vecgeom4cuda13NavStateIndex13TopMatrixImplEjRNS0_16Transformation3DE'
     */
-    #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
-      geometryStepLength = LoopNavigator::ComputeStepAndNextVolume(currentTrack.pos, currentTrack.dir, geometricalStepLengthFromPhysics,
-                                  currentTrack.currentState, currentTrack.nextState);
-    #endif
+    // #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
+    //   geometryStepLength = LoopNavigator::ComputeStepAndNextVolume(currentTrack.pos, currentTrack.dir, geometricalStepLengthFromPhysics,
+    //                               currentTrack.currentState, currentTrack.nextState);
+    // #endif
     currentTrack.pos += (geometryStepLength + kPush) * currentTrack.dir;
 
     if (currentTrack.nextState.IsOnBoundary()) {
@@ -121,9 +121,9 @@ void TransportGammas(Track *gammas, const adept::MParray *active, Secondaries se
 
       The .bc file needs to be passed to the llvm-link step of the compilation.
       */
-      #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
-        LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
-      #endif
+      // #if defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
+      //   LoopNavigator::RelocateToNextVolume(currentTrack.pos, currentTrack.dir, currentTrack.nextState);
+      // #endif
 
       // Move to the next boundary.
       currentTrack.SwapStates();
